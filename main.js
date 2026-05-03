@@ -1,7 +1,7 @@
 const BOARD_SPACES = [
     { id: 0, name: 'GO', type: 'go', color: '#fff' },
     { id: 1, name: '鶴橋', type: 'property', price: 60, rent: 2, color: '#8b4513' },
-    { id: 2, name: '共同基金', type: 'chest', color: '#fff' },
+    { id: 2, name: '土地行政', type: 'chest', color: '#fff' },
     { id: 3, name: '新世界', type: 'property', price: 60, rent: 4, color: '#8b4513' },
     { id: 4, name: '所得税', type: 'tax', price: 200, color: '#fff' },
     { id: 5, name: '大阪', type: 'railroad', price: 200, rent: 25, color: '#ccc' },
@@ -16,7 +16,7 @@ const BOARD_SPACES = [
     { id: 14, name: '道頓堀', type: 'property', price: 160, rent: 12, color: '#ffc0cb' },
     { id: 15, name: '新大阪', type: 'railroad', price: 200, rent: 25, color: '#ccc' },
     { id: 16, name: '堀江', type: 'property', price: 180, rent: 14, color: '#ffa500' },
-    { id: 17, name: '共同基金', type: 'chest', color: '#fff' },
+    { id: 17, name: '土地行政', type: 'chest', color: '#fff' },
     { id: 18, name: 'アメ村', type: 'property', price: 180, rent: 14, color: '#ffa500' },
     { id: 19, name: '南船場', type: 'property', price: 200, rent: 16, color: '#ffa500' },
     { id: 20, name: '駐車場', type: 'parking', color: '#fff' },
@@ -45,7 +45,7 @@ const BOARD_SPACES = [
 BOARD_SPACES.forEach(space => {
     if (space.price !== undefined) {
         space.basePrice = space.price;
-        space.baseRent = space.rent;
+        if (space.rent !== undefined) space.rent *= 2; space.baseRent = space.rent;
         if (space.type === 'property') {
             space.houses = 0;
         }
@@ -54,6 +54,7 @@ BOARD_SPACES.forEach(space => {
 
 const COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#eab308'];
 let players = [];
+let gameEnded = false;
 let currentPlayerIndex = 0;
 let diceValue = 0;
 let doubleCount = 0;
@@ -694,9 +695,12 @@ function resolveSpace(player, space) {
         player.position = 10;
         player.inJail = true;
         updateTokenPositions();
-    } else if (space.type === 'chance' || space.type === 'chest') {
+    } else if (space.type === "chance") {
         handleChance(player);
-        return; // handleChance の中でターン終了などのフローを制御します
+        return;
+    } else if (space.type === "chest") {
+        handleLandAdmin(player);
+        return;
     } else if (space.type === 'disaster') {
         handleDisaster(player);
         return;
@@ -947,11 +951,11 @@ function buyProperty(player, space) {
     log(`${player.name} は ${space.name} を購入した！`);
     updatePlayerStats();
 }
-
 function checkBankrupt(player) {
-    if (player.money < 0) {
+    if (player.money < 0 && !gameEnded) {
+        gameEnded = true;
         log(`!! ${player.name} は破産した !!`);
-        // Basic bankruptcy handling
+        setTimeout(endGame, 1000);
     }
 }
 
@@ -965,6 +969,7 @@ function showEndTurn() {
 }
 
 function endTurn() {
+    if (gameEnded) return;
     currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
     
     // ラウンドが一周（currentPlayerIndexが0に戻る）したらチャートを更新
@@ -1190,3 +1195,481 @@ document.getElementById('bgm-toggle').addEventListener('click', () => {
     playClickSound();
 });
 
+
+// --- 土地行政 (Land Administration) Logic ---
+const landAdminModal = document.getElementById('land-admin-modal');
+const landAdminType = document.getElementById('land-admin-type');
+const landAdminText = document.getElementById('land-admin-text');
+const landAdminInteraction = document.getElementById('land-admin-interaction');
+
+function handleLandAdmin(player) {
+    const cardIndex = Math.floor(Math.random() * 7);
+    landAdminInteraction.innerHTML = '';
+    landAdminModal.classList.add('active');
+    
+    playTone(400, 'sine', 0.2, 0.1);
+    setTimeout(() => playTone(600, 'sine', 0.4, 0.1), 200);
+
+    log(`${player.name} は土地行政カードを引いた。`);
+
+    switch(cardIndex) {
+        case 0: handleLandSale(player); break;
+        case 1: handleLandConsolidation(player); break;
+        case 2: handleCompetitiveBidding(player); break;
+        case 3: handleLandExchange(player); break;
+        case 4: handleRegionalDev(player, '高速道路', 0.1, 1.1); break;
+        case 5: handleRegionalDev(player, '港湾設備', 0.2, 1.2); break;
+        case 6: handleNewTown(player); break;
+    }
+}
+
+function handleLandSale(player) {
+    landAdminType.innerText = "土地の払い下げ";
+    const unowned = BOARD_SPACES.filter(s => s.owner === undefined && (s.type === 'property' || s.type === 'railroad' || s.type === 'utility'));
+    
+    if (unowned.length === 0) {
+        landAdminText.innerText = "現在、払い下げ可能な土地はありません。";
+        setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 2000);
+        return;
+    }
+    
+    const target = unowned[Math.floor(Math.random() * unowned.length)];
+    const price = Math.floor(Math.random() * 91) + 10;
+    
+    landAdminText.innerText = `${target.name} を $${price} で購入しますか？`;
+    
+    const yesBtn = document.createElement('button');
+    yesBtn.className = 'yes-btn';
+    yesBtn.innerText = 'はい';
+    const noBtn = document.createElement('button');
+    noBtn.className = 'no-btn';
+    noBtn.innerText = 'いいえ';
+    
+    if (player.isCPU) {
+        setTimeout(() => {
+            if (player.money >= price) buyPropertyAtPrice(player, target, price);
+            landAdminModal.classList.remove('active');
+            showEndTurn();
+        }, 2000);
+    } else {
+        yesBtn.onclick = () => {
+            if (player.money >= price) {
+                buyPropertyAtPrice(player, target, price);
+                landAdminModal.classList.remove('active');
+                showEndTurn();
+            } else alert("お金が足りません！");
+        };
+        noBtn.onclick = () => {
+            landAdminModal.classList.remove('active');
+            showEndTurn();
+        };
+        landAdminInteraction.appendChild(yesBtn);
+        landAdminInteraction.appendChild(noBtn);
+    }
+}
+
+function buyPropertyAtPrice(player, space, price) {
+    player.money -= price;
+    space.owner = player.id;
+    player.properties.push(space.id);
+    const ownerIndicator = document.getElementById(`owner-${space.id}`);
+    if (ownerIndicator) ownerIndicator.style.backgroundColor = player.color;
+    playBuySound();
+    log(`${player.name} は払い下げにより ${space.name} を $${price} で取得した！`);
+    updatePlayerStats();
+}
+
+function handleLandConsolidation(player) {
+    landAdminType.innerText = "区画整理";
+    const colorGroups = [...new Set(BOARD_SPACES.filter(s => s.type === 'property').map(s => s.color))];
+    const targetColor = colorGroups[Math.floor(Math.random() * colorGroups.length)];
+    
+    const colorName = getColorName(targetColor);
+    landAdminText.innerText = `対象の色: ${colorName} の土地が更地になります。`;
+    
+    BOARD_SPACES.filter(s => s.color === targetColor).forEach(s => {
+        if (s.owner !== undefined) {
+            const owner = players[s.owner];
+            owner.money += s.price;
+            const idx = owner.properties.indexOf(s.id);
+            if (idx > -1) owner.properties.splice(idx, 1);
+            delete s.owner;
+            s.houses = 0;
+            s.rent = s.baseRent;
+            const ownerIndicator = document.getElementById(`owner-${s.id}`);
+            if (ownerIndicator) ownerIndicator.style.backgroundColor = 'transparent';
+            updateSpaceUI(s);
+        }
+    });
+    
+    log(`区画整理により ${colorName} の土地がすべて空き地になりました。`);
+    updatePlayerStats();
+    setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 3000);
+}
+
+async function handleCompetitiveBidding(player) {
+    landAdminType.innerText = "競争入札";
+    const possible = BOARD_SPACES.filter(s => (s.type === 'property' || s.type === 'railroad') && s.name !== 'GO' && s.name !== '刑務所' && s.name !== '関西電力' && s.name !== '水道局');
+    const target = possible[Math.floor(Math.random() * possible.length)];
+    
+    const buildingPrice = target.houses ? target.houses * target.basePrice : 0;
+    const baseValue = target.price + buildingPrice;
+    
+    let minBid = Math.floor(baseValue * 1.1);
+    let currentHighBid = 0;
+    let currentWinner = null;
+    
+    // Round 1
+    log(`${target.name} の入札開始 (最低 $${minBid})`);
+    for (const p of players) {
+        const bid = await getPlayerBid(p, target, minBid);
+        if (bid >= minBid && bid > currentHighBid) {
+            currentHighBid = bid;
+            currentWinner = p;
+        }
+    }
+    
+    if (!currentWinner) {
+        minBid = baseValue;
+        log("第2回入札開始 (最低 $${minBid})");
+        for (const p of players) {
+            const bid = await getPlayerBid(p, target, minBid);
+            if (bid >= minBid && bid > currentHighBid) {
+                currentHighBid = bid;
+                currentWinner = p;
+            }
+        }
+    }
+    
+    if (currentWinner) {
+        if (target.owner !== undefined) {
+            players[target.owner].money += currentHighBid;
+            const idx = players[target.owner].properties.indexOf(target.id);
+            if (idx > -1) players[target.owner].properties.splice(idx, 1);
+        }
+        currentWinner.money -= currentHighBid;
+        target.owner = currentWinner.id;
+        currentWinner.properties.push(target.id);
+        const ownerIndicator = document.getElementById(`owner-${target.id}`);
+        if (ownerIndicator) ownerIndicator.style.backgroundColor = currentWinner.color;
+        playBuySound();
+        log(`${currentWinner.name} が ${target.name} を $${currentHighBid} で落札！`);
+        await handleBuildingTransfer(currentWinner, target);
+    } else {
+        log("入札なし。");
+    }
+    
+    updatePlayerStats();
+    landAdminModal.classList.remove('active');
+    showEndTurn();
+}
+
+function getPlayerBid(player, space, minBid) {
+    return new Promise(resolve => {
+        if (player.isCPU) {
+            setTimeout(() => {
+                if (player.money >= minBid + 100 && Math.random() < 0.4) resolve(minBid + Math.floor(Math.random() * 100));
+                else resolve(0);
+            }, 600);
+        } else {
+            landAdminInteraction.innerHTML = '';
+            landAdminText.innerText = `${player.name} の入札番です (最低: $${minBid})\n対象: ${space.name}`;
+            const container = document.createElement('div');
+            container.className = 'bid-input-container';
+            const input = document.createElement('input');
+            input.type = 'number'; input.value = minBid;
+            const bidBtn = document.createElement('button');
+            bidBtn.className = 'bid-btn'; bidBtn.innerText = '入札';
+            const passBtn = document.createElement('button');
+            passBtn.className = 'pass-btn'; passBtn.innerText = '辞退';
+            bidBtn.onclick = () => {
+                const v = parseInt(input.value);
+                if (v >= minBid && v <= player.money) resolve(v);
+                else alert("金額が正しくありません。");
+            };
+            passBtn.onclick = () => resolve(0);
+            container.appendChild(input); container.appendChild(bidBtn);
+            landAdminInteraction.appendChild(container); landAdminInteraction.appendChild(passBtn);
+        }
+    });
+}
+
+async function handleLandExchange(player) {
+    landAdminType.innerText = "土地交換";
+    if (player.properties.length === 0) {
+        landAdminText.innerText = "交換できる土地がありません。";
+        setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 2000);
+        return;
+    }
+    
+    const othersProps = BOARD_SPACES.filter(s => s.owner !== undefined && s.owner !== player.id);
+    if (othersProps.length === 0) {
+        landAdminText.innerText = "相手が土地を持っていません。";
+        setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 2000);
+        return;
+    }
+
+    if (player.isCPU) {
+        landAdminText.innerText = "CPUは交換を見送った。";
+        setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 1500);
+        return;
+    }
+
+    const myProp = await selectProperty(player, "自分の土地を選択");
+    if (!myProp) { landAdminModal.classList.remove('active'); showEndTurn(); return; }
+    
+    const otherProp = await selectPropertyFromOthers(player, "相手の土地を選択");
+    if (!otherProp) { landAdminModal.classList.remove('active'); showEndTurn(); return; }
+
+    const myVal = myProp.price + (myProp.houses ? myProp.houses * myProp.basePrice : 0);
+    const otherVal = otherProp.price + (otherProp.houses ? otherProp.houses * otherProp.basePrice : 0);
+    const otherPlayer = players[otherProp.owner];
+    
+    if (myVal < otherVal) {
+        const diff = otherVal - myVal;
+        player.money -= diff; otherPlayer.money += diff;
+        log(`${player.name} が差額 $${diff} を支払った。`);
+    } else if (myVal > otherVal) {
+        const diff = myVal - otherVal;
+        otherPlayer.money -= diff; player.money += diff;
+        log(`${otherPlayer.name} が差額 $${diff} を支払った。`);
+    }
+    
+    const fee = Math.floor(Math.max(myVal, otherVal) * 0.1);
+    player.money -= fee;
+    log(`銀行に手数料 $${fee} を支払った。`);
+    
+    const myIdx = player.properties.indexOf(myProp.id);
+    const otherIdx = otherPlayer.properties.indexOf(otherProp.id);
+    player.properties.splice(myIdx, 1); otherPlayer.properties.splice(otherIdx, 1);
+    player.properties.push(otherProp.id); otherPlayer.properties.push(myProp.id);
+    myProp.owner = otherPlayer.id; otherProp.owner = player.id;
+    
+    document.getElementById(`owner-${myProp.id}`).style.backgroundColor = otherPlayer.color;
+    document.getElementById(`owner-${otherProp.id}`).style.backgroundColor = player.color;
+    
+    await handleBuildingTransfer(player, otherProp);
+    await handleBuildingTransfer(otherPlayer, myProp);
+    log(`${myProp.name} と ${otherProp.name} を交換した！`);
+    updatePlayerStats();
+    landAdminModal.classList.remove('active');
+    showEndTurn();
+}
+
+function handleRegionalDev(player, name, payRate, priceRate) {
+    landAdminType.innerText = name + "の作成";
+    const colors = [...new Set(BOARD_SPACES.filter(s => s.type === 'property').map(s => s.color))];
+    const targetColor = colors[Math.floor(Math.random() * colors.length)];
+    const colorName = getColorName(targetColor);
+    landAdminText.innerText = `${colorName} に ${name} を建設。基準価格 ${Math.round((priceRate-1)*100)}% UP！`;
+    
+    BOARD_SPACES.filter(s => s.color === targetColor).forEach(s => {
+        if (s.owner !== undefined) {
+            const pay = Math.floor(s.basePrice * payRate);
+            players[s.owner].money -= pay;
+        }
+        s.basePrice = Math.round(s.basePrice * priceRate);
+        s.baseRent = Math.round(s.baseRent * priceRate);
+        s.price = Math.round(s.price * priceRate);
+        s.rent = Math.round(s.rent * priceRate);
+        const el = document.getElementById(`space-${s.id}`);
+        if (el) {
+            const pEl = el.querySelector('.space-price');
+            if (pEl) pEl.innerText = `$${s.price}`;
+        }
+    });
+    updatePlayerStats();
+    setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 3000);
+}
+
+function handleNewTown(player) {
+    landAdminType.innerText = "ニュータウンの作成";
+    const colors = [...new Set(BOARD_SPACES.filter(s => s.type === 'property').map(s => s.color))];
+    const vacantColors = colors.filter(c => BOARD_SPACES.filter(s => s.color === c).every(s => s.owner === undefined));
+    
+    if (vacantColors.length === 0) {
+        landAdminText.innerText = "空き地域がありません。";
+        setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 1500);
+        return;
+    }
+    
+    const targetColor = vacantColors[Math.floor(Math.random() * vacantColors.length)];
+    const group = BOARD_SPACES.filter(s => s.color === targetColor);
+    const discountPrice = Math.floor(group.reduce((sum, s) => sum + s.basePrice, 0) * 0.5);
+    
+    const colorName = getColorName(targetColor);
+    landAdminText.innerText = `${colorName} の土地を一括購入しますか？ ($${discountPrice})`;
+    const yesBtn = document.createElement('button'); yesBtn.className = 'yes-btn'; yesBtn.innerText = 'はい';
+    const noBtn = document.createElement('button'); noBtn.className = 'no-btn'; noBtn.innerText = 'いいえ';
+    
+    const buy = () => {
+        if (player.money >= discountPrice) {
+            player.money -= discountPrice;
+            group.forEach(s => {
+                s.owner = player.id; player.properties.push(s.id);
+                document.getElementById(`owner-${s.id}`).style.backgroundColor = player.color;
+            });
+            const colorName = getColorName(targetColor);
+            playBuySound(); log(`ニュータウン開発で ${colorName} を取得！`);
+            updatePlayerStats(); landAdminModal.classList.remove('active'); showEndTurn();
+        } else alert("お金が足りません。");
+    };
+    
+    if (player.isCPU) {
+        setTimeout(() => {
+            if (player.money >= discountPrice + 500) buy();
+            else { landAdminModal.classList.remove('active'); showEndTurn(); }
+        }, 2000);
+    } else {
+        yesBtn.onclick = buy; noBtn.onclick = () => { landAdminModal.classList.remove('active'); showEndTurn(); };
+        landAdminInteraction.appendChild(yesBtn); landAdminInteraction.appendChild(noBtn);
+    }
+}
+
+function selectProperty(player, title) {
+    return new Promise(resolve => {
+        landAdminText.innerText = title;
+        landAdminInteraction.innerHTML = '';
+        const list = document.createElement('div');
+        list.className = 'land-admin-property-list';
+        player.properties.forEach(id => {
+            const s = BOARD_SPACES[id];
+            const item = document.createElement('div');
+            item.className = 'land-admin-property-item';
+            item.innerText = s.name;
+            item.onclick = () => resolve(s);
+            list.appendChild(item);
+        });
+        landAdminInteraction.appendChild(list);
+        const skip = document.createElement('button');
+        skip.className = 'no-btn'; skip.innerText = 'キャンセル';
+        skip.onclick = () => resolve(null);
+        landAdminInteraction.appendChild(skip);
+    });
+}
+
+function selectPropertyFromOthers(player, title) {
+    return new Promise(resolve => {
+        landAdminText.innerText = title;
+        landAdminInteraction.innerHTML = '';
+        const list = document.createElement('div');
+        list.className = 'land-admin-property-list';
+        BOARD_SPACES.forEach(s => {
+            if (s.owner !== undefined && s.owner !== player.id && (s.type === 'property' || s.type === 'railroad' || s.type === 'utility')) {
+                const item = document.createElement('div');
+                item.className = 'land-admin-property-item';
+                item.innerText = `${s.name} (${players[s.owner].name})`;
+                item.onclick = () => resolve(s);
+                list.appendChild(item);
+            }
+        });
+        landAdminInteraction.appendChild(list);
+        const skip = document.createElement('button');
+        skip.className = 'no-btn'; skip.innerText = 'キャンセル';
+        skip.onclick = () => resolve(null);
+        landAdminInteraction.appendChild(skip);
+    });
+}
+
+function getColorName(color) {
+    const names = {
+        '#8b4513': '茶色',
+        '#87ceeb': '水色',
+        '#ffc0cb': 'ピンク',
+        '#ffa500': 'オレンジ',
+        '#ff0000': '赤色',
+        '#ffff00': '黄色',
+        '#008000': '緑色',
+        '#00008b': '紺色'
+    };
+    return names[color] || color;
+}
+
+async function handleBuildingTransfer(player, space) {
+    if (space.houses > 0) {
+        if (player.isCPU) {
+            if (player.money >= 700) {
+                player.money -= 200;
+                log(`${player.name} は $200 を支払い、${space.name} の建物を引き継いだ。`);
+            } else {
+                space.houses = 0;
+                space.rent = space.baseRent;
+                log(`${player.name} は ${space.name} の建物を解体した。`);
+            }
+        } else {
+            const keep = await new Promise(resolve => {
+                landAdminInteraction.innerHTML = '';
+                landAdminText.innerText = `${space.name} には建物があります。\n$200 を支払って引き継ぎますか？\n(いいえ を選ぶと解体されます)`;
+                const yesBtn = document.createElement('button');
+                yesBtn.className = 'yes-btn'; yesBtn.innerText = 'はい ($200)';
+                const noBtn = document.createElement('button');
+                noBtn.className = 'no-btn'; noBtn.innerText = 'いいえ (解体)';
+                yesBtn.onclick = () => resolve(true);
+                noBtn.onclick = () => resolve(false);
+                landAdminInteraction.appendChild(yesBtn);
+                landAdminInteraction.appendChild(noBtn);
+            });
+            if (keep) {
+                if (player.money >= 200) {
+                    player.money -= 200;
+                    log(`${player.name} は $200 を支払い、${space.name} の建物を引き継いだ。`);
+                } else {
+                    alert("お金が足りないため、建物は解体されました。");
+                    space.houses = 0;
+                    space.rent = space.baseRent;
+                }
+            } else {
+                space.houses = 0;
+                space.rent = space.baseRent;
+                log(`${player.name} は ${space.name} の建物を解体した。`);
+            }
+        }
+        updateSpaceUI(space);
+        updatePlayerStats();
+    }
+}
+
+function endGame() {
+    const resultModal = document.getElementById('result-modal');
+    const resultList = document.getElementById('result-list');
+    resultList.innerHTML = '';
+
+    const results = players.map(p => {
+        const propertyValue = p.properties.reduce((sum, id) => sum + BOARD_SPACES[id].price, 0);
+        return {
+            name: p.name,
+            money: p.money,
+            propertyValue: propertyValue,
+            totalAssets: p.money + propertyValue,
+            color: p.color
+        };
+    });
+
+    results.sort((a, b) => {
+        if (a.money < 0 && b.money >= 0) return 1;
+        if (b.money < 0 && a.money >= 0) return -1;
+        return b.totalAssets - a.totalAssets;
+    });
+
+    results.forEach((r, i) => {
+        const item = document.createElement('div');
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.style.padding = '1rem';
+        item.style.margin = '0.5rem 0';
+        item.style.background = 'rgba(255,255,255,0.05)';
+        item.style.borderRadius = '0.5rem';
+        item.style.borderLeft = `6px solid ${r.color}`;
+        item.style.fontSize = '1.2rem';
+        item.style.fontWeight = 'bold';
+        
+        item.innerHTML = `
+            <span>${i + 1}位: ${r.name} ${r.money < 0 ? '<span style="color:#ef4444">(破産)</span>' : ''}</span>
+            <span style="color:#4ade80">$${r.totalAssets}</span>
+        `;
+        resultList.appendChild(item);
+    });
+
+    resultModal.classList.add('active');
+    playBuySound();
+}
