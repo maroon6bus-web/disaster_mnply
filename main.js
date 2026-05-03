@@ -24,7 +24,7 @@ const BOARD_SPACES = [
     { id: 22, name: 'チャンス', type: 'chance', color: '#fff' },
     { id: 23, name: '中津', type: 'property', price: 220, rent: 18, color: '#ff0000' },
     { id: 24, name: '中崎町', type: 'property', price: 240, rent: 20, color: '#ff0000' },
-    { id: 25, name: '難波', type: 'railroad', price: 200, rent: 25, color: '#ccc' },
+    { id: 25, name: '南海難波', type: 'railroad', price: 200, rent: 25, color: '#ccc' },
     { id: 26, name: '北新地', type: 'property', price: 260, rent: 22, color: '#ffff00' },
     { id: 27, name: '堂島', type: 'property', price: 260, rent: 22, color: '#ffff00' },
     { id: 28, name: '水道局', type: 'utility', price: 150, rent: 10, color: '#ccc' },
@@ -34,7 +34,7 @@ const BOARD_SPACES = [
     { id: 32, name: '本町', type: 'property', price: 300, rent: 26, color: '#008000' },
     { id: 33, name: '災害', type: 'disaster', color: '#000' },
     { id: 34, name: '中之島', type: 'property', price: 320, rent: 28, color: '#008000' },
-    { id: 35, name: '天王寺', type: 'railroad', price: 200, rent: 25, color: '#ccc' },
+    { id: 35, name: 'あべの', type: 'railroad', price: 200, rent: 25, color: '#ccc' },
     { id: 36, name: 'チャンス', type: 'chance', color: '#fff' },
     { id: 37, name: '万博公園', type: 'property', price: 350, rent: 35, color: '#00008b' },
     { id: 38, name: '物品税', type: 'tax', price: 100, color: '#fff' },
@@ -59,6 +59,7 @@ let currentPlayerIndex = 0;
 let diceValue = 0;
 let doubleCount = 0;
 let assetChart;
+let landChart, buildingChart;
 let roundHistory = {
     labels: [],
     datasets: []
@@ -256,50 +257,44 @@ function startGame(humanCount) {
     initChart(); // Initialize Chart
     startTurn();
 }
-
 function initChart() {
-    const ctx = document.getElementById('asset-chart').getContext('2d');
-    
-    // Reset history
+    const canvasAsset = document.getElementById('asset-chart');
+    const canvasLand = document.getElementById('land-chart');
+    const canvasBuilding = document.getElementById('building-chart');
+
+    if (!canvasAsset || !canvasLand || !canvasBuilding) return;
+
+    const ctxAsset = canvasAsset.getContext('2d');
+    const ctxLand = canvasLand.getContext('2d');
+    const ctxBuilding = canvasBuilding.getContext('2d');
+
     roundHistory = {
         labels: ['開始'],
         datasets: players.map((p, i) => ({
-            label: p.name,
-            data: [p.money],
-            borderColor: p.color,
-            backgroundColor: p.color + '33',
-            tension: 0.3,
-            borderWidth: 3,
-            pointRadius: 4
+            label: p.name, data: [p.money], borderColor: p.color, backgroundColor: p.color + '33', tension: 0.3, borderWidth: 2, pointRadius: 2
         }))
     };
 
     if (assetChart) assetChart.destroy();
-    
-    assetChart = new Chart(ctx, {
-        type: 'line',
-        data: roundHistory,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: false,
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                    ticks: { color: '#94a3b8' }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#94a3b8' }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: true,
-                    labels: { color: '#f8fafc', font: { weight: 'bold' } }
-                }
-            }
+    if (landChart) landChart.destroy();
+    if (buildingChart) buildingChart.destroy();
+
+    assetChart = new Chart(ctxAsset, {
+        type: 'line', data: roundHistory, options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { ticks: { color: '#94a3b8', font: { size: 9 } } }, x: { ticks: { color: '#94a3b8', font: { size: 9 } } } },
+            plugins: { legend: { labels: { color: '#f8fafc', font: { size: 9 } } } }
         }
+    });
+
+    landChart = new Chart(ctxLand, {
+        type: 'bar', data: { labels: players.map(p => p.name), datasets: [{ label: '土地', data: players.map(p => p.properties.length), backgroundColor: players.map(p => p.color) }] },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94a3b8', font: { size: 9 } } }, x: { ticks: { color: '#94a3b8', font: { size: 8 } } } }, plugins: { legend: { display: false }, title: { display: true, text: '土地所有数', color: '#fff', font: { size: 10 } } } }
+    });
+
+    buildingChart = new Chart(ctxBuilding, {
+        type: 'bar', data: { labels: players.map(p => p.name), datasets: [{ label: '建物', data: players.map(p => p.properties.reduce((sum, id) => sum + (BOARD_SPACES[id].houses || 0), 0)), backgroundColor: players.map(p => p.color) }] },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94a3b8', font: { size: 9 } } }, x: { ticks: { color: '#94a3b8', font: { size: 8 } } } }, plugins: { legend: { display: false }, title: { display: true, text: '建物所有数', color: '#fff', font: { size: 10 } } } }
     });
 }
 
@@ -342,7 +337,7 @@ function initBoard() {
 
         let innerHTML = '';
         if (['property', 'railroad', 'utility'].includes(space.type)) {
-            innerHTML += `<div class="space-color" style="background-color: ${space.color}"></div>`;
+            if (space.type !== 'utility') innerHTML += `<div class="space-color" style="background-color: ${space.color}"></div>`;
             if (space.type === 'property') {
                 innerHTML += `<div class="house-container" id="houses-${index}"></div>`;
             }
@@ -393,6 +388,7 @@ function updateTokenPositions() {
 }
 
 function updatePlayerStats() {
+    updatePropertyChart();
     playerStatsElement.innerHTML = '';
     players.forEach((player, i) => {
         const card = document.createElement('div');
@@ -609,7 +605,7 @@ function handleRoll() {
         dice1El.innerText = d1;
         dice2El.innerText = d2;
 
-        const total = d1 + d2;
+        const total = d1 + d2; diceValue = total; if (d1 === d2) { doubleCount++; log('ゾロ目！もう一度振れます。'); } else { doubleCount = 0; }
         const player = players[currentPlayerIndex];
         log(`${player.name} は ${total} を出した。`);
 
@@ -670,7 +666,14 @@ function resolveSpace(player, space) {
         } else if (space.owner !== player.id) {
             // Pay rent
             let rent = space.rent;
-            if (space.disasterEffect === 'rent-free') {
+            if (space.type === "utility") {
+                const owner = players[space.owner];
+                const utilities = owner.properties.filter(id => BOARD_SPACES[id].type === "utility");
+                const multiplier = utilities.length === 2 ? 10 : 4;
+                rent = diceValue * multiplier;
+                log(`${owner.name} は公共事業を ${utilities.length} つ所有しているため、ダイスの目(${diceValue})の ${multiplier} 倍を請求。`);
+            }
+            if (space.disasterEffect === "rent-free") {
                 rent = 0;
             }
 
@@ -678,10 +681,10 @@ function resolveSpace(player, space) {
                 player.money -= rent;
                 players[space.owner].money += rent;
                 playPaySound();
-                log(`${player.name} は ${players[space.owner].name} に家賃 $${rent} を支払った。`);
+                log(`${player.name} は ${players[space.owner].name} にレンタル料 $${rent} を支払った。`);
                 updatePlayerStats();
-            } else if (space.disasterEffect === 'rent-free') {
-                log(`${player.name} は災害の影響で家賃を支払わずに済んだ！`);
+            } else if (space.disasterEffect === "rent-free") {
+                log(`${player.name} は災害の影響でレンタル料を支払わずに済んだ！`);
             }
         }
     } else if (space.type === 'tax') {
@@ -856,6 +859,7 @@ function applyDestructionDisaster(player, space, mode, lossChance = 0) {
 }
 
 function updateSpaceUI(space) {
+    updatePropertyChart();
     const container = document.getElementById(`houses-${space.id}`);
     if (container) {
         container.innerHTML = '';
@@ -922,9 +926,15 @@ function handleUnownedProperty(player, space) {
 
             currentSkipHandler = () => {
                 playClickSound();
-                propertyModal.classList.remove('active');
+                propertyModal.classList.remove("active");
                 log(`${player.name} は ${space.name} の購入を見送った。`);
-                showEndTurn();
+                if (space.type === "utility") {
+                    log(`${space.name} は公共事業のため、自動的に競売にかけられます。`);
+                    landAdminModal.classList.add("active");
+                    handleCompetitiveBidding(player, space);
+                } else {
+                    showEndTurn();
+                }
             };
 
             dynamicBuyBtn.addEventListener('click', currentBuyHandler);
@@ -932,7 +942,13 @@ function handleUnownedProperty(player, space) {
         }
     } else {
         log(`${player.name} はお金が足りず買えない。`);
-        showEndTurn();
+        if (space.type === "utility") {
+            log(`${space.name} は公共事業のため、自動的に競売にかけられます。`);
+            landAdminModal.classList.add("active");
+            handleCompetitiveBidding(player, space);
+        } else {
+            showEndTurn();
+        }
     }
 }
 
@@ -953,69 +969,118 @@ function buyProperty(player, space) {
 }
 function checkBankrupt(player) {
     if (player.money < 0 && !gameEnded) {
-        gameEnded = true;
-        log(`!! ${player.name} は破産した !!`);
-        setTimeout(endGame, 1000);
+        log(`${player.name} は資金不足です。資産を売却して返済を試みます。`);
+        
+        // 1. 建物をランダムに売却
+        while (player.money < 0) {
+            const spacesWithHouses = player.properties
+                .map(id => BOARD_SPACES[id])
+                .filter(s => s.houses > 0);
+            
+            if (spacesWithHouses.length === 0) break;
+            
+            const target = spacesWithHouses[Math.floor(Math.random() * spacesWithHouses.length)];
+            target.houses--;
+            const sellPrice = Math.floor(target.basePrice * 0.5);
+            player.money += sellPrice;
+            
+            // 家賃の更新
+            const increase = target.basePrice * 0.5;
+            target.rent = Math.round(target.baseRent + (target.houses * increase));
+            if (target.houses === 5) target.rent += target.basePrice;
+            
+            log(`${player.name} は ${target.name} の建物を売却して $${sellPrice} を得た。 (残金: $${player.money})`);
+            updateSpaceUI(target);
+            updatePlayerStats();
+        }
+
+        // 2. 土地をランダムに売却
+        while (player.money < 0) {
+            if (player.properties.length === 0) break;
+            
+            const propIndex = Math.floor(Math.random() * player.properties.length);
+            const propId = player.properties[propIndex];
+            const target = BOARD_SPACES[propId];
+            
+            const sellPrice = Math.floor(target.basePrice * 0.5);
+            player.money += sellPrice;
+            
+            log(`${player.name} は ${target.name} を売却して $${sellPrice} を得た。 (残金: $${player.money})`);
+            
+            // 所有権の解除
+            player.properties.splice(propIndex, 1);
+            delete target.owner;
+            const ownerIndicator = document.getElementById(`owner-${target.id}`);
+            if (ownerIndicator) ownerIndicator.style.backgroundColor = "transparent";
+            
+            updateSpaceUI(target);
+            updatePlayerStats();
+        }
+
+        if (player.money < 0) {
+            gameEnded = true;
+            log(`!! ${player.name} はすべての資産を失い破産した !!`);
+            setTimeout(endGame, 1000);
+        } else {
+            log(`${player.name} は負債を完済した。 (残金: $${player.money})`);
+        }
     }
 }
-
 function showEndTurn() {
-    rollBtn.style.visibility = 'hidden';
-    buildBtn.style.display = 'none';
-    endTurnBtn.style.display = 'none';
-
-    // 1.5秒待ってから自動で次のターンへ
+    rollBtn.style.visibility = "hidden";
+    buildBtn.style.display = "none";
+    endTurnBtn.style.display = "none";
     setTimeout(endTurn, 1500);
 }
 
 function endTurn() {
     if (gameEnded) return;
-    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-    
-    // ラウンドが一周（currentPlayerIndexが0に戻る）したらチャートを更新
-    if (currentPlayerIndex === 0) {
-        updateChartData();
+    if (doubleCount === 0) {
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+        if (currentPlayerIndex === 0) {
+            updateChartData();
+        }
+    } else {
+        log(`${players[currentPlayerIndex].name} はゾロ目だったので継続します。`);
     }
-    
     startTurn();
 }
 
 function updateChartData() {
     if (!assetChart) return;
-
     const roundNumber = roundHistory.labels.length;
     roundHistory.labels.push(`R${roundNumber}`);
-
     players.forEach((p, i) => {
-        // 総資産 = 所持金 + 所有している土地の現在価格の合計
         const propertyValue = p.properties.reduce((sum, id) => sum + BOARD_SPACES[id].price, 0);
         const totalAssets = p.money + propertyValue;
         roundHistory.datasets[i].data.push(totalAssets);
     });
-
     assetChart.update();
+    updatePropertyChart();
 }
+
 
 // 地価変動イベント
 function triggerMarketCrash() {
     const colorGroups = [
-        { color: '#8b4513', name: '茶色' },
-        { color: '#87ceeb', name: '水色' },
-        { color: '#ffc0cb', name: 'ピンク' },
-        { color: '#ffa500', name: 'オレンジ' },
-        { color: '#ff0000', name: '赤色' },
-        { color: '#ffff00', name: '黄色' },
-        { color: '#008000', name: '緑色' },
-        { color: '#00008b', name: '紺色' }
+        { color: "#8b4513", name: "茶色" },
+        { color: "#87ceeb", name: "水色" },
+        { color: "#ffc0cb", name: "ピンク" },
+        { color: "#ffa500", name: "オレンジ" },
+        { color: "#ff0000", name: "赤色" },
+        { color: "#ffff00", name: "黄色" },
+        { color: "#008000", name: "緑色" },
+        { color: "#00008b", name: "紺色" }
     ];
 
     const group = colorGroups[Math.floor(Math.random() * colorGroups.length)];
+    const isUp = Math.random() > 0.3;
+    const multiplier = isUp ? 1.5 : 0.5;
 
-    // 0.5倍 〜 2.0倍 (0.1刻み)
-    const multiplier = (Math.floor(Math.random() * 16) + 5) / 10;
+    log(`【市場変動】${group.name} の地価が${isUp ? "上昇" : "下落"}しました！`);
 
     BOARD_SPACES.forEach(space => {
-        if (space.type === 'property') {
+        if (space.type === "property") {
             const spaceEl = document.getElementById(`space-${space.id}`);
             
             if (space.color === group.color) {
@@ -1307,10 +1372,13 @@ function handleLandConsolidation(player) {
     setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 3000);
 }
 
-async function handleCompetitiveBidding(player) {
+async function handleCompetitiveBidding(player, specificTarget = null) {
     landAdminType.innerText = "競争入札";
-    const possible = BOARD_SPACES.filter(s => (s.type === 'property' || s.type === 'railroad') && s.name !== 'GO' && s.name !== '刑務所' && s.name !== '関西電力' && s.name !== '水道局');
-    const target = possible[Math.floor(Math.random() * possible.length)];
+    let target = specificTarget;
+    if (!target) {
+        const possible = BOARD_SPACES.filter(s => (s.type === 'property' || s.type === 'railroad') && s.name !== 'GO' && s.name !== '刑務所' && s.name !== '関西電力' && s.name !== '水道局');
+        target = possible[Math.floor(Math.random() * possible.length)];
+    }
     
     const buildingPrice = target.houses ? target.houses * target.basePrice : 0;
     const baseValue = target.price + buildingPrice;
@@ -1672,4 +1740,12 @@ function endGame() {
 
     resultModal.classList.add('active');
     playBuySound();
+}
+
+function updatePropertyChart() {
+    if (!landChart || !buildingChart) return;
+    landChart.data.datasets[0].data = players.map(p => p.properties.length);
+    buildingChart.data.datasets[0].data = players.map(p => p.properties.reduce((sum, id) => sum + (BOARD_SPACES[id].houses || 0), 0));
+    landChart.update();
+    buildingChart.update();
 }
