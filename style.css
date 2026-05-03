@@ -683,3 +683,114 @@ body {
     background: #fff;
     transform: rotate(45deg);
 }
+/* Disaster Card */
+.disaster-card {
+    border: 8px solid #000;
+    border-radius: 1.5rem;
+    width: 90%;
+    max-width: 500px;
+    height: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 15px 40px rgba(255, 0, 0, 0.4), inset 0 0 40px rgba(0, 0, 0, 0.8);
+    color: #fff;
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+    transform: scale(0.5);
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    background: linear-gradient(135deg, #450a0a, #000000);
+}
+
+#disaster-modal.active .disaster-card {
+    transform: scale(1);
+    animation: shake 0.5s infinite;
+}
+
+@keyframes shake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    10% { transform: translate(-1px, -2px) rotate(-1deg); }
+    20% { transform: translate(-3px, 0px) rotate(1deg); }
+    30% { transform: translate(3px, 2px) rotate(0deg); }
+    40% { transform: translate(1px, -1px) rotate(1deg); }
+    50% { transform: translate(-1px, 2px) rotate(-1deg); }
+    60% { transform: translate(-3px, 1px) rotate(0deg); }
+    70% { transform: translate(3px, 1px) rotate(-1deg); }
+    80% { transform: translate(-1px, -1px) rotate(1deg); }
+    90% { transform: translate(1px, 2px) rotate(0deg); }
+    100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+.disaster-header {
+    font-size: 3rem;
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+    letter-spacing: 4px;
+    color: #ef4444;
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+.disaster-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.8));
+}
+
+.disaster-type {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #fca5a5;
+    margin-bottom: 0.5rem;
+}
+
+.disaster-text {
+    font-size: 1.4rem;
+    font-weight: bold;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    line-height: 1.4;
+}
+
+.disaster-timer {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.6);
+    margin-top: 1rem;
+}
+
+/* Disaster Space on Board */
+.space.disaster {
+    background: #1e1b4b;
+    color: #fff;
+}
+
+.disaster-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    opacity: 0.2;
+    pointer-events: none;
+}
+
+.rent-free-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(239, 68, 68, 0.1),
+        rgba(239, 68, 68, 0.1) 10px,
+        rgba(0, 0, 0, 0.1) 10px,
+        rgba(0, 0, 0, 0.1) 20px
+    );
+    pointer-events: none;
+    z-index: 3;
+}

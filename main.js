@@ -32,7 +32,7 @@ const BOARD_SPACES = [
     { id: 30, name: '刑務所へ', type: 'gotojail', color: '#fff' },
     { id: 31, name: '御堂筋', type: 'property', price: 300, rent: 26, color: '#008000' },
     { id: 32, name: '本町', type: 'property', price: 300, rent: 26, color: '#008000' },
-    { id: 33, name: '共同基金', type: 'chest', color: '#fff' },
+    { id: 33, name: '災害', type: 'disaster', color: '#000' },
     { id: 34, name: '中之島', type: 'property', price: 320, rent: 28, color: '#008000' },
     { id: 35, name: '天王寺', type: 'railroad', price: 200, rent: 25, color: '#ccc' },
     { id: 36, name: 'チャンス', type: 'chance', color: '#fff' },
@@ -203,6 +203,24 @@ chanceModal.addEventListener('click', () => {
     }
 });
 
+// Disaster Card Elements
+const disasterModal = document.getElementById('disaster-modal');
+const disasterTypeEl = document.getElementById('disaster-type');
+const disasterTextEl = document.getElementById('disaster-text');
+const disasterIconEl = disasterModal.querySelector('.disaster-icon');
+
+let disasterTimeout;
+let currentDisasterAction;
+
+disasterModal.addEventListener('click', () => {
+    if (disasterModal.classList.contains('active')) {
+        playClickSound();
+        clearTimeout(disasterTimeout);
+        disasterModal.classList.remove('active');
+        if (currentDisasterAction) currentDisasterAction();
+    }
+});
+
 // Start Game Setup
 document.querySelectorAll('.select-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -291,7 +309,7 @@ function initBoard() {
     // Create spaces
     BOARD_SPACES.forEach((space, index) => {
         const spaceEl = document.createElement('div');
-        spaceEl.className = 'space';
+        spaceEl.className = `space ${space.type}`;
         spaceEl.id = `space-${index}`;
 
         // Determine grid position (11x11 grid)
@@ -330,6 +348,9 @@ function initBoard() {
             innerHTML += `<div class="space-name">${space.name}</div>`;
             innerHTML += `<div class="space-price">$${space.price}</div>`;
             innerHTML += `<div class="owner-indicator" id="owner-${index}"></div>`;
+        } else if (space.type === 'disaster') {
+            innerHTML += `<div class="space-name" style="margin: auto;">${space.name}</div>`;
+            innerHTML += `<div class="disaster-badge">⚠️</div>`;
         } else {
             innerHTML += `<div class="space-name" style="margin: auto;">${space.name}</div>`;
             if (space.type === 'tax') innerHTML += `<div class="space-price">-$${space.price}</div>`;
@@ -602,6 +623,7 @@ function movePlayerTo(player, targetIndex) {
         log(`${player.name} がGOを通過し、$200受け取った。`);
         playBuySound();
         updatePlayerStats();
+        clearDisasterEffects(player);
     }
     player.position = targetIndex;
     updateTokenPositions();
@@ -620,6 +642,7 @@ function movePlayer(player, amount) {
         log(`${player.name} がGOを通過し、$200受け取った。`);
         playBuySound(); // GOマスのボーナス音
         updatePlayerStats();
+        clearDisasterEffects(player);
 
         // プレイヤー1（先頭）がGOを通過したら地価変動イベントを発生
         if (player.id === 0) {
@@ -645,12 +668,20 @@ function resolveSpace(player, space) {
             return; // Wait for async action
         } else if (space.owner !== player.id) {
             // Pay rent
-            const rent = space.rent; // Simplification: fixed rent
-            player.money -= rent;
-            players[space.owner].money += rent;
-            playPaySound();
-            log(`${player.name} は ${players[space.owner].name} に家賃 $${rent} を支払った。`);
-            updatePlayerStats();
+            let rent = space.rent;
+            if (space.disasterEffect === 'rent-free') {
+                rent = 0;
+            }
+
+            if (rent > 0) {
+                player.money -= rent;
+                players[space.owner].money += rent;
+                playPaySound();
+                log(`${player.name} は ${players[space.owner].name} に家賃 $${rent} を支払った。`);
+                updatePlayerStats();
+            } else if (space.disasterEffect === 'rent-free') {
+                log(`${player.name} は災害の影響で家賃を支払わずに済んだ！`);
+            }
         }
     } else if (space.type === 'tax') {
         player.money -= space.price;
@@ -666,6 +697,9 @@ function resolveSpace(player, space) {
     } else if (space.type === 'chance' || space.type === 'chest') {
         handleChance(player);
         return; // handleChance の中でターン終了などのフローを制御します
+    } else if (space.type === 'disaster') {
+        handleDisaster(player);
+        return;
     }
 
     checkBankrupt(player);
@@ -718,6 +752,140 @@ function handleChance(player) {
             if (currentChanceAction) currentChanceAction();
         }
     }, 15000);
+}
+
+const DISASTER_TYPES = [
+    { name: '停電', weight: 10, icon: '🌑', text: '所有者がGOに行くまで賃貸料無料。$20x建物の数を受け取る', action: (p, s) => applyRentFreeDisaster(p, s, 20) },
+    { name: '断水', weight: 8, icon: '💧', text: '所有者がGOに行くまで賃貸料無料。$30x建物の数を受け取る', action: (p, s) => applyRentFreeDisaster(p, s, 30) },
+    { name: 'ガス漏れ', weight: 6, icon: '🔥', text: '所有者がGOに行くまで賃貸料無料。$50x建物の数を受け取る', action: (p, s) => applyRentFreeDisaster(p, s, 50) },
+    { name: '火事', weight: 4, icon: '🚒', text: 'ひとつの土地のすべての建物がなくなる。', action: (p, s) => applyDestructionDisaster(p, s, 'single') },
+    { name: '洪水', weight: 2, icon: '🌊', text: '同一色のすべての建物がなくなる。さらに30%の確率で土地も失う。', action: (p, s) => applyDestructionDisaster(p, s, 'color', 0.3) },
+    { name: '地震', weight: 1, icon: '🌋', text: '同一色のすべての建物がなくなる。土地も没収される。', action: (p, s) => applyDestructionDisaster(p, s, 'color', 1.0) }
+];
+
+function handleDisaster(player) {
+    const totalWeight = DISASTER_TYPES.reduce((sum, d) => sum + d.weight, 0);
+    let random = Math.random() * totalWeight;
+    let disaster;
+    for (const d of DISASTER_TYPES) {
+        if (random < d.weight) {
+            disaster = d;
+            break;
+        }
+        random -= d.weight;
+    }
+
+    disasterTypeEl.innerText = disaster.name;
+    disasterTextEl.innerText = disaster.text;
+    disasterIconEl.innerText = disaster.icon;
+    disasterModal.classList.add('active');
+
+    // 災害用の効果音
+    playTone(100, 'sawtooth', 0.5, 0.2);
+    setTimeout(() => playTone(80, 'sawtooth', 0.8, 0.2), 300);
+
+    log(`!! 災害発生 !! ${player.name} はカードを引いた：「${disaster.name}」`);
+
+    currentDisasterAction = () => {
+        // 全ての所有されている土地からランダムに選ぶ
+        const ownedSpaces = BOARD_SPACES.filter(s => s.owner !== undefined && (s.type === 'property' || s.type === 'railroad' || s.type === 'utility'));
+        if (ownedSpaces.length === 0) {
+            log("幸いなことに、被害を受ける土地がありませんでした。");
+            showEndTurn();
+            return;
+        }
+        const targetSpace = ownedSpaces[Math.floor(Math.random() * ownedSpaces.length)];
+        disaster.action(player, targetSpace);
+    };
+
+    disasterTimeout = setTimeout(() => {
+        if (disasterModal.classList.contains('active')) {
+            disasterModal.classList.remove('active');
+            if (currentDisasterAction) currentDisasterAction();
+        }
+    }, 15000);
+}
+
+function applyRentFreeDisaster(player, space, moneyPerBuilding) {
+    const owner = players[space.owner];
+    const bonus = (space.houses || 0) * moneyPerBuilding;
+    owner.money += bonus;
+    space.disasterEffect = 'rent-free';
+    space.disasterOwner = owner.id;
+
+    log(`${owner.name} の所有する ${space.name} で${space.disasterEffect === 'rent-free' ? 'インフラ障害' : '災害'}が発生！`);
+    log(`${owner.name} は補償金 $${bonus} を受け取ったが、賃貸料が無料になった。`);
+    
+    updateSpaceUI(space);
+    updatePlayerStats();
+    showEndTurn();
+}
+
+function applyDestructionDisaster(player, space, mode, lossChance = 0) {
+    let targets = [];
+    if (mode === 'single') {
+        targets = [space];
+    } else {
+        targets = BOARD_SPACES.filter(s => s.color === space.color && s.owner !== undefined);
+    }
+
+    targets.forEach(s => {
+        const owner = players[s.owner];
+        s.houses = 0;
+        s.rent = s.baseRent;
+        log(`${s.name} の建物がすべて失われた！`);
+
+        if (Math.random() < lossChance) {
+            log(`${owner.name} は ${s.name} の所有権を失った！`);
+            delete s.owner;
+            const idx = owner.properties.indexOf(s.id);
+            if (idx > -1) owner.properties.splice(idx, 1);
+            const ownerIndicator = document.getElementById(`owner-${s.id}`);
+            if (ownerIndicator) ownerIndicator.style.backgroundColor = 'transparent';
+        }
+        updateSpaceUI(s);
+    });
+
+    playPaySound();
+    updatePlayerStats();
+    showEndTurn();
+}
+
+function updateSpaceUI(space) {
+    const container = document.getElementById(`houses-${space.id}`);
+    if (container) {
+        container.innerHTML = '';
+        if (space.houses === 5) {
+            container.innerHTML = '<div class="hotel-icon"></div>';
+        } else if (space.houses > 0) {
+            for (let i = 0; i < space.houses; i++) {
+                container.innerHTML += '<div class="house-icon"></div>';
+            }
+        }
+    }
+    
+    const spaceEl = document.getElementById(`space-${space.id}`);
+    if (spaceEl) {
+        const existingIndicator = spaceEl.querySelector('.rent-free-indicator');
+        if (existingIndicator) existingIndicator.remove();
+        
+        if (space.disasterEffect === 'rent-free') {
+            const indicator = document.createElement('div');
+            indicator.className = 'rent-free-indicator';
+            spaceEl.appendChild(indicator);
+        }
+    }
+}
+
+function clearDisasterEffects(player) {
+    BOARD_SPACES.forEach(s => {
+        if (s.disasterEffect === 'rent-free' && s.disasterOwner === player.id) {
+            delete s.disasterEffect;
+            delete s.disasterOwner;
+            log(`${player.name} がGOを通過したため、${s.name} のインフラが復旧した。`);
+            updateSpaceUI(s);
+        }
+    });
 }
 
 let currentBuyHandler = null;
