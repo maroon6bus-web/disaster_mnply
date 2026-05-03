@@ -65,6 +65,67 @@ let roundHistory = {
     datasets: []
 };
 
+
+function saveGame() {
+    if (gameEnded) return;
+    const saveData = {
+        players: players,
+        boardSpaces: BOARD_SPACES.map(s => ({
+            owner: s.owner,
+            houses: s.houses,
+            price: s.price,
+            rent: s.rent,
+            disasterEffect: s.disasterEffect,
+            disasterOwner: s.disasterOwner
+        })),
+        currentPlayerIndex: currentPlayerIndex,
+        roundHistory: roundHistory
+    };
+    localStorage.setItem("monopoly_save", JSON.stringify(saveData));
+}
+
+function loadGame() {
+    const saved = localStorage.getItem("monopoly_save");
+    if (!saved) return;
+    const data = JSON.parse(saved);
+
+    players = data.players;
+    currentPlayerIndex = data.currentPlayerIndex;
+    roundHistory = data.roundHistory;
+
+    data.boardSpaces.forEach((s, i) => {
+        BOARD_SPACES[i].owner = s.owner;
+        BOARD_SPACES[i].houses = s.houses || 0;
+        BOARD_SPACES[i].price = s.price;
+        BOARD_SPACES[i].rent = s.rent;
+        BOARD_SPACES[i].disasterEffect = s.disasterEffect;
+        BOARD_SPACES[i].disasterOwner = s.disasterOwner;
+    });
+
+    document.getElementById("start-screen").classList.remove("active");
+    document.getElementById("game-screen").classList.add("active");
+
+    initBoard();
+    updatePlayerStats();
+    initChart(true);
+    startTurn();
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    const saveData = localStorage.getItem("monopoly_save");
+    if (saveData) {
+        const continueSection = document.getElementById("continue-section");
+        if (continueSection) {
+            continueSection.style.display = "block";
+            document.getElementById("continue-btn").addEventListener("click", () => {
+                initAudio();
+                playClickSound();
+                loadGame();
+            });
+        }
+    }
+});
+
 // Web Audio API Setup
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
@@ -257,23 +318,25 @@ function startGame(humanCount) {
     initChart(); // Initialize Chart
     startTurn();
 }
-function initChart() {
-    const canvasAsset = document.getElementById('asset-chart');
-    const canvasLand = document.getElementById('land-chart');
-    const canvasBuilding = document.getElementById('building-chart');
+function initChart(isLoad = false) {
+    const canvasAsset = document.getElementById("asset-chart");
+    const canvasLand = document.getElementById("land-chart");
+    const canvasBuilding = document.getElementById("building-chart");
 
     if (!canvasAsset || !canvasLand || !canvasBuilding) return;
 
-    const ctxAsset = canvasAsset.getContext('2d');
-    const ctxLand = canvasLand.getContext('2d');
-    const ctxBuilding = canvasBuilding.getContext('2d');
+    const ctxAsset = canvasAsset.getContext("2d");
+    const ctxLand = canvasLand.getContext("2d");
+    const ctxBuilding = canvasBuilding.getContext("2d");
 
-    roundHistory = {
-        labels: ['開始'],
-        datasets: players.map((p, i) => ({
-            label: p.name, data: [p.money], borderColor: p.color, backgroundColor: p.color + '33', tension: 0.3, borderWidth: 2, pointRadius: 2
-        }))
-    };
+    if (!isLoad) {
+        roundHistory = {
+            labels: ["開始"],
+            datasets: players.map((p, i) => ({
+                label: p.name, data: [p.money], borderColor: p.color, backgroundColor: p.color + "33", tension: 0.3, borderWidth: 2, pointRadius: 2
+            }))
+        };
+    }
 
     if (assetChart) assetChart.destroy();
     if (landChart) landChart.destroy();
@@ -389,6 +452,7 @@ function updateTokenPositions() {
 
 function updatePlayerStats() {
     updatePropertyChart();
+    saveGame();
     playerStatsElement.innerHTML = '';
     players.forEach((player, i) => {
         const card = document.createElement('div');
@@ -860,6 +924,7 @@ function applyDestructionDisaster(player, space, mode, lossChance = 0) {
 
 function updateSpaceUI(space) {
     updatePropertyChart();
+    saveGame();
     const container = document.getElementById(`houses-${space.id}`);
     if (container) {
         container.innerHTML = '';
@@ -1034,6 +1099,7 @@ function showEndTurn() {
 }
 
 function endTurn() {
+    saveGame();
     if (gameEnded) return;
     if (doubleCount === 0) {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
@@ -1698,6 +1764,7 @@ async function handleBuildingTransfer(player, space) {
 }
 
 function endGame() {
+    localStorage.removeItem('monopoly_save');
     const resultModal = document.getElementById('result-modal');
     const resultList = document.getElementById('result-list');
     resultList.innerHTML = '';
