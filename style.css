@@ -65,7 +65,7 @@ body {
     margin-top: 3rem;
 }
 
-.select-btn {
+.menu-btn {
     padding: 1rem 2.5rem;
     font-size: 1.5rem;
     font-weight: bold;
@@ -78,7 +78,7 @@ body {
     box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
 }
 
-.select-btn:hover {
+.menu-btn:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
     background: #2563eb;

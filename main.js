@@ -284,8 +284,40 @@ disasterModal.addEventListener('click', () => {
     }
 });
 
+// Land Administration Elements
+const landAdminModal = document.getElementById('land-admin-modal');
+const landAdminType = document.getElementById('land-admin-type');
+const landAdminText = document.getElementById('land-admin-text');
+const landAdminInteraction = document.getElementById('land-admin-interaction');
+
+let landAdminTimeout;
+let currentLandAdminAction;
+
+landAdminModal.addEventListener('click', (e) => {
+    // ボタンや入力をクリックしたときはモーダルを閉じないようにする
+    if (e.target !== landAdminModal && !e.target.classList.contains('land-admin-card') && e.target.closest('.land-admin-interaction')) {
+        return;
+    }
+    
+    if (landAdminModal.classList.contains('active')) {
+        playClickSound();
+        closeLandAdmin();
+    }
+});
+
+function closeLandAdmin() {
+    clearTimeout(landAdminTimeout);
+    if (landAdminModal.classList.contains('active')) {
+        landAdminModal.classList.remove('active');
+        if (currentLandAdminAction) {
+            currentLandAdminAction();
+            currentLandAdminAction = null;
+        }
+    }
+}
+
 // Start Game Setup
-document.querySelectorAll('.select-btn').forEach(btn => {
+document.querySelectorAll('.player-select .menu-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
         initAudio();
         playClickSound();
@@ -294,7 +326,19 @@ document.querySelectorAll('.select-btn').forEach(btn => {
     });
 });
 
+function resetBoardState() {
+    BOARD_SPACES.forEach(space => {
+        delete space.owner;
+        if (space.houses !== undefined) space.houses = 0;
+        if (space.basePrice !== undefined) space.price = space.basePrice;
+        if (space.baseRent !== undefined) space.rent = space.baseRent;
+        delete space.disasterEffect;
+        delete space.disasterOwner;
+    });
+}
+
 function startGame(humanCount) {
+    resetBoardState();
     players = [];
     for (let i = 0; i < 4; i++) {
         players.push({
@@ -401,12 +445,28 @@ function initBoard() {
         let innerHTML = '';
         if (['property', 'railroad', 'utility'].includes(space.type)) {
             if (space.type !== 'utility') innerHTML += `<div class="space-color" style="background-color: ${space.color}"></div>`;
-            if (space.type === 'property') {
-                innerHTML += `<div class="house-container" id="houses-${index}"></div>`;
+            
+            // 建物（家・ホテル）の状態を復元
+            let housesHTML = '';
+            if (space.type === 'property' && space.houses > 0) {
+                if (space.houses === 5) {
+                    housesHTML = '<div class="hotel-icon"></div>';
+                } else {
+                    for (let i = 0; i < space.houses; i++) {
+                        housesHTML += '<div class="house-icon"></div>';
+                    }
+                }
             }
+            if (space.type === 'property') {
+                innerHTML += `<div class="house-container" id="houses-${index}">${housesHTML}</div>`;
+            }
+            
             innerHTML += `<div class="space-name">${space.name}</div>`;
             innerHTML += `<div class="space-price">$${space.price}</div>`;
-            innerHTML += `<div class="owner-indicator" id="owner-${index}"></div>`;
+            
+            // 所有者の状態を復元
+            const ownerColor = (space.owner !== undefined && players[space.owner]) ? players[space.owner].color : 'transparent';
+            innerHTML += `<div class="owner-indicator" id="owner-${index}" style="background-color: ${ownerColor}"></div>`;
         } else if (space.type === 'disaster') {
             innerHTML += `<div class="space-name" style="margin: auto;">${space.name}</div>`;
             innerHTML += `<div class="disaster-badge">⚠️</div>`;
@@ -1328,10 +1388,6 @@ document.getElementById('bgm-toggle').addEventListener('click', () => {
 
 
 // --- 土地行政 (Land Administration) Logic ---
-const landAdminModal = document.getElementById('land-admin-modal');
-const landAdminType = document.getElementById('land-admin-type');
-const landAdminText = document.getElementById('land-admin-text');
-const landAdminInteraction = document.getElementById('land-admin-interaction');
 
 function handleLandAdmin(player) {
     const cardIndex = Math.floor(Math.random() * 7);
@@ -1343,6 +1399,10 @@ function handleLandAdmin(player) {
 
     log(`${player.name} は土地行政カードを引いた。`);
 
+    currentLandAdminAction = () => {
+        showEndTurn();
+    };
+
     switch(cardIndex) {
         case 0: handleLandSale(player); break;
         case 1: handleLandConsolidation(player); break;
@@ -1352,6 +1412,15 @@ function handleLandAdmin(player) {
         case 5: handleRegionalDev(player, '港湾設備', 0.2, 1.2); break;
         case 6: handleNewTown(player); break;
     }
+
+    // 15秒後に自動進行
+    clearTimeout(landAdminTimeout);
+    landAdminTimeout = setTimeout(() => {
+        if (landAdminModal.classList.contains('active')) {
+            landAdminModal.classList.remove('active');
+            if (currentLandAdminAction) currentLandAdminAction();
+        }
+    }, 15000);
 }
 
 function handleLandSale(player) {
@@ -1360,7 +1429,6 @@ function handleLandSale(player) {
     
     if (unowned.length === 0) {
         landAdminText.innerText = "現在、払い下げ可能な土地はありません。";
-        setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 2000);
         return;
     }
     
@@ -1379,20 +1447,17 @@ function handleLandSale(player) {
     if (player.isCPU) {
         setTimeout(() => {
             if (player.money >= price) buyPropertyAtPrice(player, target, price);
-            landAdminModal.classList.remove('active');
-            showEndTurn();
+            closeLandAdmin();
         }, 2000);
     } else {
         yesBtn.onclick = () => {
             if (player.money >= price) {
                 buyPropertyAtPrice(player, target, price);
-                landAdminModal.classList.remove('active');
-                showEndTurn();
+                closeLandAdmin();
             } else alert("お金が足りません！");
         };
         noBtn.onclick = () => {
-            landAdminModal.classList.remove('active');
-            showEndTurn();
+            closeLandAdmin();
         };
         landAdminInteraction.appendChild(yesBtn);
         landAdminInteraction.appendChild(noBtn);
@@ -1435,7 +1500,6 @@ function handleLandConsolidation(player) {
     
     log(`区画整理により ${colorName} の土地がすべて空き地になりました。`);
     updatePlayerStats();
-    setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 3000);
 }
 
 async function handleCompetitiveBidding(player, specificTarget = null) {
@@ -1532,20 +1596,17 @@ async function handleLandExchange(player) {
     landAdminType.innerText = "土地交換";
     if (player.properties.length === 0) {
         landAdminText.innerText = "交換できる土地がありません。";
-        setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 2000);
         return;
     }
     
     const othersProps = BOARD_SPACES.filter(s => s.owner !== undefined && s.owner !== player.id);
     if (othersProps.length === 0) {
         landAdminText.innerText = "相手が土地を持っていません。";
-        setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 2000);
         return;
     }
 
     if (player.isCPU) {
         landAdminText.innerText = "CPUは交換を見送った。";
-        setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 1500);
         return;
     }
 
@@ -1613,7 +1674,6 @@ function handleRegionalDev(player, name, payRate, priceRate) {
         }
     });
     updatePlayerStats();
-    setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 3000);
 }
 
 function handleNewTown(player) {
@@ -1645,17 +1705,17 @@ function handleNewTown(player) {
             });
             const colorName = getColorName(targetColor);
             playBuySound(); log(`ニュータウン開発で ${colorName} を取得！`);
-            updatePlayerStats(); landAdminModal.classList.remove('active'); showEndTurn();
+            updatePlayerStats(); closeLandAdmin();
         } else alert("お金が足りません。");
     };
     
     if (player.isCPU) {
         setTimeout(() => {
             if (player.money >= discountPrice + 500) buy();
-            else { landAdminModal.classList.remove('active'); showEndTurn(); }
+            else { closeLandAdmin(); }
         }, 2000);
     } else {
-        yesBtn.onclick = buy; noBtn.onclick = () => { landAdminModal.classList.remove('active'); showEndTurn(); };
+        yesBtn.onclick = buy; noBtn.onclick = () => { closeLandAdmin(); };
         landAdminInteraction.appendChild(yesBtn); landAdminInteraction.appendChild(noBtn);
     }
 }
