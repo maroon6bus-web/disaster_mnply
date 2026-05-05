@@ -65,6 +65,16 @@ let roundHistory = {
     datasets: []
 };
 
+// 新機能の状態
+const INSURANCE_PRICE = 50;
+let activeEvent = null; // { name, text, multiplier, color, duration }
+const OSAKA_EVENTS = [
+    { name: '天神祭', text: '梅田・北新地エリアの活気が最高潮！賃貸料が3倍に。', color: '#ff0000', multiplier: 3, targetColors: ['#ff0000', '#ffff00'], duration: 3 },
+    { name: '万博開催決定', text: '万博公園エリアへの注目度アップ！賃貸料が3倍に。', color: '#00008b', multiplier: 3, targetColors: ['#00008b'], duration: 4 },
+    { name: 'くいだおれ大売出し', text: '難波・道頓堀エリアが食通で溢れる！賃貸料が3倍に。', color: '#ffc0cb', multiplier: 3, targetColors: ['#ffc0cb'], duration: 3 },
+    { name: 'タイガース優勝', text: '大阪全体がお祭り騒ぎ！すべての土地の賃貸料が1.5倍に。', color: '#eab308', multiplier: 1.5, targetColors: 'all', duration: 2 }
+];
+
 
 function saveGame() {
     if (gameEnded) return;
@@ -239,6 +249,9 @@ const modalPropertyName = document.getElementById('modal-property-name');
 const modalPropertyPrice = document.getElementById('modal-property-price');
 const buyBtn = document.getElementById('buy-btn');
 const skipBtn = document.getElementById('skip-btn');
+const insuranceBtn = document.getElementById('insurance-btn');
+const activeEventDisplay = document.getElementById('active-event-display');
+const eventText = document.getElementById('event-text');
 
 // Build Modal Elements
 const buildModal = document.getElementById('build-modal');
@@ -298,7 +311,7 @@ landAdminModal.addEventListener('click', (e) => {
     if (e.target !== landAdminModal && !e.target.classList.contains('land-admin-card') && e.target.closest('.land-admin-interaction')) {
         return;
     }
-    
+
     if (landAdminModal.classList.contains('active')) {
         playClickSound();
         closeLandAdmin();
@@ -350,7 +363,8 @@ function startGame(humanCount) {
             color: COLORS[i],
             inJail: false,
             jailTurns: 0,
-            properties: []
+            properties: [],
+            hasInsurance: false
         });
     }
 
@@ -396,12 +410,12 @@ function initChart(isLoad = false) {
 
     landChart = new Chart(ctxLand, {
         type: 'bar', data: { labels: players.map(p => p.name), datasets: [{ label: '土地', data: players.map(p => p.properties.length), backgroundColor: players.map(p => p.color) }] },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94a3b8', font: { size: 9 } } }, x: { ticks: { color: '#94a3b8', font: { size: 8 } } } }, plugins: { legend: { display: false }, title: { display: true, text: '土地所有数', color: '#fff', font: { size: 10 } } } }
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94a3b8', font: { size: 9 } } }, x: { ticks: { color: '#94a3b8', font: { size: 8 } } } }, plugins: { legend: { display: false }, title: { display: true, text: '土地数', color: '#fff', font: { size: 10 } } } }
     });
 
     buildingChart = new Chart(ctxBuilding, {
         type: 'bar', data: { labels: players.map(p => p.name), datasets: [{ label: '建物', data: players.map(p => p.properties.reduce((sum, id) => sum + (BOARD_SPACES[id].houses || 0), 0)), backgroundColor: players.map(p => p.color) }] },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94a3b8', font: { size: 9 } } }, x: { ticks: { color: '#94a3b8', font: { size: 8 } } } }, plugins: { legend: { display: false }, title: { display: true, text: '建物所有数', color: '#fff', font: { size: 10 } } } }
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94a3b8', font: { size: 9 } } }, x: { ticks: { color: '#94a3b8', font: { size: 8 } } } }, plugins: { legend: { display: false }, title: { display: true, text: '建物数', color: '#fff', font: { size: 10 } } } }
     });
 }
 
@@ -445,7 +459,7 @@ function initBoard() {
         let innerHTML = '';
         if (['property', 'railroad', 'utility'].includes(space.type)) {
             if (space.type !== 'utility') innerHTML += `<div class="space-color" style="background-color: ${space.color}"></div>`;
-            
+
             // 建物（家・ホテル）の状態を復元
             let housesHTML = '';
             if (space.type === 'property' && space.houses > 0) {
@@ -460,10 +474,10 @@ function initBoard() {
             if (space.type === 'property') {
                 innerHTML += `<div class="house-container" id="houses-${index}">${housesHTML}</div>`;
             }
-            
+
             innerHTML += `<div class="space-name">${space.name}</div>`;
             innerHTML += `<div class="space-price">$${space.price}</div>`;
-            
+
             // 所有者の状態を復元
             const ownerColor = (space.owner !== undefined && players[space.owner]) ? players[space.owner].color : 'transparent';
             innerHTML += `<div class="owner-indicator" id="owner-${index}" style="background-color: ${ownerColor}"></div>`;
@@ -577,6 +591,47 @@ function updateBuildButtonVisibility() {
     }
 }
 
+function updateInsuranceButtonVisibility() {
+    const player = players[currentPlayerIndex];
+    if (player.isCPU) {
+        insuranceBtn.style.display = 'none';
+        return;
+    }
+    if (!player.hasInsurance && player.money >= INSURANCE_PRICE && rollBtn.style.visibility === 'visible') {
+        insuranceBtn.style.display = 'block';
+    } else {
+        insuranceBtn.style.display = 'none';
+    }
+}
+
+function triggerOsakaEvent() {
+    const event = OSAKA_EVENTS[Math.floor(Math.random() * OSAKA_EVENTS.length)];
+    activeEvent = { ...event };
+    
+    eventText.innerText = `【${activeEvent.name}】${activeEvent.text} (あと${activeEvent.duration}ターン)`;
+    activeEventDisplay.style.display = 'block';
+    activeEventDisplay.style.borderColor = activeEvent.color;
+    activeEventDisplay.style.color = activeEvent.color;
+    activeEventDisplay.style.background = `${activeEvent.color}22`;
+    
+    log(`!! イベント発生 !! 「${activeEvent.name}」が始まりました！`);
+    playTone(600, 'sine', 0.3, 0.1);
+    setTimeout(() => playTone(800, 'sine', 0.3, 0.1), 150);
+}
+
+function updateActiveEvent() {
+    if (!activeEvent) return;
+    
+    activeEvent.duration--;
+    if (activeEvent.duration <= 0) {
+        log(`「${activeEvent.name}」が終了しました。`);
+        activeEvent = null;
+        activeEventDisplay.style.display = 'none';
+    } else {
+        eventText.innerText = `【${activeEvent.name}】${activeEvent.text} (あと${activeEvent.duration}ターン)`;
+    }
+}
+
 buildBtn.addEventListener('click', () => {
     playClickSound();
     openBuildModal();
@@ -662,6 +717,15 @@ function tryCPUBuild(player) {
     }
 }
 
+function tryCPUInsurance(player) {
+    if (!player.hasInsurance && player.money >= INSURANCE_PRICE + 800) { // ある程度余裕があるときだけ加入
+        player.money -= INSURANCE_PRICE;
+        player.hasInsurance = true;
+        log(`${player.name} は災害保険に加入しました。`);
+        updatePlayerStats();
+    }
+}
+
 // Turn Logic
 function startTurn() {
     updatePlayerStats();
@@ -673,6 +737,12 @@ function startTurn() {
     endTurnBtn.style.display = 'none';
 
     updateBuildButtonVisibility();
+    updateInsuranceButtonVisibility();
+
+    // プレイヤー1のターン開始時にイベントの期間を更新
+    if (player.id === 0) {
+        updateActiveEvent();
+    }
 
     if (player.inJail) {
         log(`${player.name} は刑務所にいます。`);
@@ -691,8 +761,10 @@ function startTurn() {
     if (player.isCPU) {
         rollBtn.disabled = true;
         buildBtn.style.display = 'none';
+        insuranceBtn.style.display = 'none';
         setTimeout(() => {
             tryCPUBuild(player);
+            tryCPUInsurance(player);
             setTimeout(handleRoll, 500);
         }, 1000);
     } else {
@@ -704,7 +776,21 @@ rollBtn.addEventListener('click', () => {
     playClickSound();
     rollBtn.disabled = true;
     buildBtn.style.display = 'none';
+    insuranceBtn.style.display = 'none';
     handleRoll();
+});
+
+insuranceBtn.addEventListener('click', () => {
+    playClickSound();
+    const player = players[currentPlayerIndex];
+    if (player.money >= INSURANCE_PRICE && !player.hasInsurance) {
+        player.money -= INSURANCE_PRICE;
+        player.hasInsurance = true;
+        log(`${player.name} は災害保険に加入しました。`);
+        playBuySound();
+        updatePlayerStats();
+        updateInsuranceButtonVisibility();
+    }
 });
 
 function handleRoll() {
@@ -765,9 +851,13 @@ function movePlayer(player, amount) {
         updatePlayerStats();
         clearDisasterEffects(player);
 
-        // プレイヤー1（先頭）がGOを通過したら地価変動イベントを発生
+        // プレイヤー1（先頭）がGOを通過したら地価変動または大阪名物イベントを発生
         if (player.id === 0) {
-            triggerMarketCrash();
+            if (Math.random() < 0.5) {
+                triggerMarketCrash();
+            } else {
+                triggerOsakaEvent();
+            }
         }
     }
 
@@ -796,6 +886,15 @@ function resolveSpace(player, space) {
                 const multiplier = utilities.length === 2 ? 10 : 4;
                 rent = diceValue * multiplier;
                 log(`${owner.name} は公共事業を ${utilities.length} つ所有しているため、ダイスの目(${diceValue})の ${multiplier} 倍を請求。`);
+            }
+
+            // 大阪名物イベントによる賃料倍率
+            if (activeEvent) {
+                if (activeEvent.targetColors === 'all' || activeEvent.targetColors.includes(space.color)) {
+                    const originalRent = rent;
+                    rent = Math.round(rent * activeEvent.multiplier);
+                    log(`【${activeEvent.name}】の影響でレンタル料が $${originalRent} から $${rent} にアップ！`);
+                }
             }
             if (space.disasterEffect === "rent-free") {
                 rent = 0;
@@ -926,7 +1025,16 @@ function handleDisaster(player) {
             return;
         }
         const targetSpace = ownedSpaces[Math.floor(Math.random() * ownedSpaces.length)];
-        disaster.action(player, targetSpace);
+        const targetOwner = players[targetSpace.owner];
+
+        if (targetOwner.hasInsurance) {
+            log(`【災害保険】が発動！ ${targetOwner.name} の所有する ${targetSpace.name} は守られました。`);
+            targetOwner.hasInsurance = false; // 保険を消費
+            updatePlayerStats();
+            showEndTurn();
+        } else {
+            disaster.action(player, targetSpace);
+        }
     };
 
     disasterTimeout = setTimeout(() => {
@@ -946,7 +1054,7 @@ function applyRentFreeDisaster(player, space, moneyPerBuilding) {
 
     log(`${owner.name} の所有する ${space.name} で${space.disasterEffect === 'rent-free' ? 'インフラ障害' : '災害'}が発生！`);
     log(`${owner.name} は補償金 $${bonus} を受け取ったが、賃貸料が無料になった。`);
-    
+
     updateSpaceUI(space);
     updatePlayerStats();
     showEndTurn();
@@ -996,12 +1104,12 @@ function updateSpaceUI(space) {
             }
         }
     }
-    
+
     const spaceEl = document.getElementById(`space-${space.id}`);
     if (spaceEl) {
         const existingIndicator = spaceEl.querySelector('.rent-free-indicator');
         if (existingIndicator) existingIndicator.remove();
-        
+
         if (space.disasterEffect === 'rent-free') {
             const indicator = document.createElement('div');
             indicator.className = 'rent-free-indicator';
@@ -1095,25 +1203,25 @@ function buyProperty(player, space) {
 function checkBankrupt(player) {
     if (player.money < 0 && !gameEnded) {
         log(`${player.name} は資金不足です。資産を売却して返済を試みます。`);
-        
+
         // 1. 建物をランダムに売却
         while (player.money < 0) {
             const spacesWithHouses = player.properties
                 .map(id => BOARD_SPACES[id])
                 .filter(s => s.houses > 0);
-            
+
             if (spacesWithHouses.length === 0) break;
-            
+
             const target = spacesWithHouses[Math.floor(Math.random() * spacesWithHouses.length)];
             target.houses--;
             const sellPrice = Math.floor(target.basePrice * 0.5);
             player.money += sellPrice;
-            
+
             // 家賃の更新
             const increase = target.basePrice * 0.5;
             target.rent = Math.round(target.baseRent + (target.houses * increase));
             if (target.houses === 5) target.rent += target.basePrice;
-            
+
             log(`${player.name} は ${target.name} の建物を売却して $${sellPrice} を得た。 (残金: $${player.money})`);
             updateSpaceUI(target);
             updatePlayerStats();
@@ -1122,22 +1230,22 @@ function checkBankrupt(player) {
         // 2. 土地をランダムに売却
         while (player.money < 0) {
             if (player.properties.length === 0) break;
-            
+
             const propIndex = Math.floor(Math.random() * player.properties.length);
             const propId = player.properties[propIndex];
             const target = BOARD_SPACES[propId];
-            
+
             const sellPrice = Math.floor(target.basePrice * 0.5);
             player.money += sellPrice;
-            
+
             log(`${player.name} は ${target.name} を売却して $${sellPrice} を得た。 (残金: $${player.money})`);
-            
+
             // 所有権の解除
             player.properties.splice(propIndex, 1);
             delete target.owner;
             const ownerIndicator = document.getElementById(`owner-${target.id}`);
             if (ownerIndicator) ownerIndicator.style.backgroundColor = "transparent";
-            
+
             updateSpaceUI(target);
             updatePlayerStats();
         }
@@ -1208,7 +1316,7 @@ function triggerMarketCrash() {
     BOARD_SPACES.forEach(space => {
         if (space.type === "property") {
             const spaceEl = document.getElementById(`space-${space.id}`);
-            
+
             if (space.color === group.color) {
                 // 選ばれた色は基準値から変動
                 space.price = Math.round(space.basePrice * multiplier);
@@ -1269,7 +1377,7 @@ class BGMManager {
         this.lookahead = 25.0;
         this.scheduleAheadTime = 0.1;
         this.gainNode = null;
-        
+
         // C G Am F progression
         this.progression = [
             [261.63, 329.63, 392.00], // C
@@ -1340,7 +1448,7 @@ class BGMManager {
         // Arpeggio
         const noteIndex = beat % 3;
         this.playSynth(chord[noteIndex], 'triangle', time, 0.2, 0.25); // Increased from 0.1
-        
+
         // Simple "hi-hat" noise
         if (beat % 2 === 0) {
             this.playNoise(time, 0.01, 0.05); // Increased from 0.03
@@ -1393,7 +1501,7 @@ function handleLandAdmin(player) {
     const cardIndex = Math.floor(Math.random() * 7);
     landAdminInteraction.innerHTML = '';
     landAdminModal.classList.add('active');
-    
+
     playTone(400, 'sine', 0.2, 0.1);
     setTimeout(() => playTone(600, 'sine', 0.4, 0.1), 200);
 
@@ -1403,7 +1511,7 @@ function handleLandAdmin(player) {
         showEndTurn();
     };
 
-    switch(cardIndex) {
+    switch (cardIndex) {
         case 0: handleLandSale(player); break;
         case 1: handleLandConsolidation(player); break;
         case 2: handleCompetitiveBidding(player); break;
@@ -1426,24 +1534,24 @@ function handleLandAdmin(player) {
 function handleLandSale(player) {
     landAdminType.innerText = "土地の払い下げ";
     const unowned = BOARD_SPACES.filter(s => s.owner === undefined && (s.type === 'property' || s.type === 'railroad' || s.type === 'utility'));
-    
+
     if (unowned.length === 0) {
         landAdminText.innerText = "現在、払い下げ可能な土地はありません。";
         return;
     }
-    
+
     const target = unowned[Math.floor(Math.random() * unowned.length)];
     const price = Math.floor(Math.random() * 91) + 10;
-    
+
     landAdminText.innerText = `${target.name} を $${price} で購入しますか？`;
-    
+
     const yesBtn = document.createElement('button');
     yesBtn.className = 'yes-btn';
     yesBtn.innerText = 'はい';
     const noBtn = document.createElement('button');
     noBtn.className = 'no-btn';
     noBtn.innerText = 'いいえ';
-    
+
     if (player.isCPU) {
         setTimeout(() => {
             if (player.money >= price) buyPropertyAtPrice(player, target, price);
@@ -1479,10 +1587,10 @@ function handleLandConsolidation(player) {
     landAdminType.innerText = "区画整理";
     const colorGroups = [...new Set(BOARD_SPACES.filter(s => s.type === 'property').map(s => s.color))];
     const targetColor = colorGroups[Math.floor(Math.random() * colorGroups.length)];
-    
+
     const colorName = getColorName(targetColor);
     landAdminText.innerText = `対象の色: ${colorName} の土地が更地になります。`;
-    
+
     BOARD_SPACES.filter(s => s.color === targetColor).forEach(s => {
         if (s.owner !== undefined) {
             const owner = players[s.owner];
@@ -1497,7 +1605,7 @@ function handleLandConsolidation(player) {
             updateSpaceUI(s);
         }
     });
-    
+
     log(`区画整理により ${colorName} の土地がすべて空き地になりました。`);
     updatePlayerStats();
 }
@@ -1509,14 +1617,14 @@ async function handleCompetitiveBidding(player, specificTarget = null) {
         const possible = BOARD_SPACES.filter(s => (s.type === 'property' || s.type === 'railroad') && s.name !== 'GO' && s.name !== '刑務所' && s.name !== '関西電力' && s.name !== '水道局');
         target = possible[Math.floor(Math.random() * possible.length)];
     }
-    
+
     const buildingPrice = target.houses ? target.houses * target.basePrice : 0;
     const baseValue = target.price + buildingPrice;
-    
+
     let minBid = Math.floor(baseValue * 1.1);
     let currentHighBid = 0;
     let currentWinner = null;
-    
+
     // Round 1
     log(`${target.name} の入札開始 (最低 $${minBid})`);
     for (const p of players) {
@@ -1526,7 +1634,7 @@ async function handleCompetitiveBidding(player, specificTarget = null) {
             currentWinner = p;
         }
     }
-    
+
     if (!currentWinner) {
         minBid = baseValue;
         log("第2回入札開始 (最低 $${minBid})");
@@ -1538,7 +1646,7 @@ async function handleCompetitiveBidding(player, specificTarget = null) {
             }
         }
     }
-    
+
     if (currentWinner) {
         if (target.owner !== undefined) {
             players[target.owner].money += currentHighBid;
@@ -1556,7 +1664,7 @@ async function handleCompetitiveBidding(player, specificTarget = null) {
     } else {
         log("入札なし。");
     }
-    
+
     updatePlayerStats();
     landAdminModal.classList.remove('active');
     showEndTurn();
@@ -1598,7 +1706,7 @@ async function handleLandExchange(player) {
         landAdminText.innerText = "交換できる土地がありません。";
         return;
     }
-    
+
     const othersProps = BOARD_SPACES.filter(s => s.owner !== undefined && s.owner !== player.id);
     if (othersProps.length === 0) {
         landAdminText.innerText = "相手が土地を持っていません。";
@@ -1612,14 +1720,14 @@ async function handleLandExchange(player) {
 
     const myProp = await selectProperty(player, "自分の土地を選択");
     if (!myProp) { landAdminModal.classList.remove('active'); showEndTurn(); return; }
-    
+
     const otherProp = await selectPropertyFromOthers(player, "相手の土地を選択");
     if (!otherProp) { landAdminModal.classList.remove('active'); showEndTurn(); return; }
 
     const myVal = myProp.price + (myProp.houses ? myProp.houses * myProp.basePrice : 0);
     const otherVal = otherProp.price + (otherProp.houses ? otherProp.houses * otherProp.basePrice : 0);
     const otherPlayer = players[otherProp.owner];
-    
+
     if (myVal < otherVal) {
         const diff = otherVal - myVal;
         player.money -= diff; otherPlayer.money += diff;
@@ -1629,20 +1737,20 @@ async function handleLandExchange(player) {
         otherPlayer.money -= diff; player.money += diff;
         log(`${otherPlayer.name} が差額 $${diff} を支払った。`);
     }
-    
+
     const fee = Math.floor(Math.max(myVal, otherVal) * 0.1);
     player.money -= fee;
     log(`銀行に手数料 $${fee} を支払った。`);
-    
+
     const myIdx = player.properties.indexOf(myProp.id);
     const otherIdx = otherPlayer.properties.indexOf(otherProp.id);
     player.properties.splice(myIdx, 1); otherPlayer.properties.splice(otherIdx, 1);
     player.properties.push(otherProp.id); otherPlayer.properties.push(myProp.id);
     myProp.owner = otherPlayer.id; otherProp.owner = player.id;
-    
+
     document.getElementById(`owner-${myProp.id}`).style.backgroundColor = otherPlayer.color;
     document.getElementById(`owner-${otherProp.id}`).style.backgroundColor = player.color;
-    
+
     await handleBuildingTransfer(player, otherProp);
     await handleBuildingTransfer(otherPlayer, myProp);
     log(`${myProp.name} と ${otherProp.name} を交換した！`);
@@ -1656,8 +1764,8 @@ function handleRegionalDev(player, name, payRate, priceRate) {
     const colors = [...new Set(BOARD_SPACES.filter(s => s.type === 'property').map(s => s.color))];
     const targetColor = colors[Math.floor(Math.random() * colors.length)];
     const colorName = getColorName(targetColor);
-    landAdminText.innerText = `${colorName} に ${name} を建設。基準価格 ${Math.round((priceRate-1)*100)}% UP！`;
-    
+    landAdminText.innerText = `${colorName} に ${name} を建設。基準価格 ${Math.round((priceRate - 1) * 100)}% UP！`;
+
     BOARD_SPACES.filter(s => s.color === targetColor).forEach(s => {
         if (s.owner !== undefined) {
             const pay = Math.floor(s.basePrice * payRate);
@@ -1680,22 +1788,22 @@ function handleNewTown(player) {
     landAdminType.innerText = "ニュータウンの作成";
     const colors = [...new Set(BOARD_SPACES.filter(s => s.type === 'property').map(s => s.color))];
     const vacantColors = colors.filter(c => BOARD_SPACES.filter(s => s.color === c).every(s => s.owner === undefined));
-    
+
     if (vacantColors.length === 0) {
         landAdminText.innerText = "空き地域がありません。";
         setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 1500);
         return;
     }
-    
+
     const targetColor = vacantColors[Math.floor(Math.random() * vacantColors.length)];
     const group = BOARD_SPACES.filter(s => s.color === targetColor);
     const discountPrice = Math.floor(group.reduce((sum, s) => sum + s.basePrice, 0) * 0.5);
-    
+
     const colorName = getColorName(targetColor);
     landAdminText.innerText = `${colorName} の土地を一括購入しますか？ ($${discountPrice})`;
     const yesBtn = document.createElement('button'); yesBtn.className = 'yes-btn'; yesBtn.innerText = 'はい';
     const noBtn = document.createElement('button'); noBtn.className = 'no-btn'; noBtn.innerText = 'いいえ';
-    
+
     const buy = () => {
         if (player.money >= discountPrice) {
             player.money -= discountPrice;
@@ -1708,7 +1816,7 @@ function handleNewTown(player) {
             updatePlayerStats(); closeLandAdmin();
         } else alert("お金が足りません。");
     };
-    
+
     if (player.isCPU) {
         setTimeout(() => {
             if (player.money >= discountPrice + 500) buy();
@@ -1857,7 +1965,7 @@ function endGame() {
         item.style.borderLeft = `6px solid ${r.color}`;
         item.style.fontSize = '1.2rem';
         item.style.fontWeight = 'bold';
-        
+
         item.innerHTML = `
             <span>${i + 1}位: ${r.name} ${r.money < 0 ? '<span style="color:#ef4444">(破産)</span>' : ''}</span>
             <span style="color:#4ade80">$${r.totalAssets}</span>

@@ -49,6 +49,9 @@
             <div class="sidebar">
                 <div class="turn-info">
                     <h2 id="current-turn-display">Player 1 のターン</h2>
+                    <div id="active-event-display" style="display: none; margin-top: 0.5rem; padding: 0.5rem; background: rgba(234, 179, 8, 0.2); border: 1px solid #eab308; border-radius: 4px; font-size: 0.9rem; color: #eab308; text-align: center;">
+                        <span id="event-text"></span>
+                    </div>
                 </div>
                 
                 <div class="player-stats" id="player-stats">
@@ -62,6 +65,7 @@
                     </div>
                     <button id="roll-btn" class="action-btn" disabled>サイコロを振る</button>
                     <button id="build-btn" class="action-btn" style="display: none; background-color: #eab308;">建物を建てる</button>
+                    <button id="insurance-btn" class="action-btn" style="display: none; background-color: #3b82f6;">災害保険 ($50)</button>
                     <button id="end-turn-btn" class="action-btn" style="display: none;">ターン終了</button>
                 </div>
                 
