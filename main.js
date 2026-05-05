@@ -1,44 +1,44 @@
 const BOARD_SPACES = [
     { id: 0, name: 'GO', type: 'go', color: '#fff' },
-    { id: 1, name: '鶴橋', type: 'property', price: 60, rent: 2, color: '#8b4513' },
+    { id: 1, name: '鶴橋', type: 'property', price: 60, rent: 2, color: '#8b4513', desc: '焼肉の聖地。駅を降りた瞬間から食欲をそそる香りが漂う街。' },
     { id: 2, name: '土地行政', type: 'chest', color: '#fff' },
-    { id: 3, name: '新世界', type: 'property', price: 60, rent: 4, color: '#8b4513' },
+    { id: 3, name: '新世界', type: 'property', price: 60, rent: 4, color: '#8b4513', desc: '通天閣と串カツ。古き良き大阪の風情が色濃く残るレトロな街。' },
     { id: 4, name: '所得税', type: 'tax', price: 200, color: '#fff' },
-    { id: 5, name: '大阪', type: 'railroad', price: 200, rent: 25, color: '#ccc' },
-    { id: 6, name: '天王寺', type: 'property', price: 100, rent: 6, color: '#87ceeb' },
+    { id: 5, name: '大阪', type: 'property', price: 200, rent: 25, color: '#ccc', desc: '大阪のメインゲート。駅ビル「大阪ステーションシティ」は巨大な商業施設。' },
+    { id: 6, name: '天王寺', type: 'property', price: 100, rent: 6, color: '#87ceeb', desc: '日本一高いビル「あべのハルカス」がそびえ立つ、新旧が共存するエリア。' },
     { id: 7, name: 'チャンス', type: 'chance', color: '#fff' },
-    { id: 8, name: '京橋', type: 'property', price: 100, rent: 6, color: '#87ceeb' },
-    { id: 9, name: '十三', type: 'property', price: 120, rent: 8, color: '#87ceeb' },
+    { id: 8, name: '京橋', type: 'property', price: 100, rent: 6, color: '#87ceeb', desc: '立ち飲み屋が軒を連ねる、大阪屈指の賑やかな歓楽街。' },
+    { id: 9, name: '十三', type: 'property', price: 120, rent: 8, color: '#87ceeb', desc: '「ねぎ焼き」発祥の地。阪急電車が交差する、独特の文化を持つ下町。' },
     { id: 10, name: '刑務所', type: 'jail', color: '#fff' },
-    { id: 11, name: '難波', type: 'property', price: 140, rent: 10, color: '#ffc0cb' },
+    { id: 11, name: '難波', type: 'property', price: 140, rent: 10, color: '#ffc0cb', desc: '大阪の顔。お笑いの殿堂・なんばグランド花月があり、常に活気にあふれる。' },
     { id: 12, name: '関西電力', type: 'utility', price: 150, rent: 10, color: '#ccc' },
-    { id: 13, name: '心斎橋', type: 'property', price: 140, rent: 10, color: '#ffc0cb' },
-    { id: 14, name: '道頓堀', type: 'property', price: 160, rent: 12, color: '#ffc0cb' },
-    { id: 15, name: '新大阪', type: 'railroad', price: 200, rent: 25, color: '#ccc' },
-    { id: 16, name: '堀江', type: 'property', price: 180, rent: 14, color: '#ffa500' },
+    { id: 13, name: '心斎橋', type: 'property', price: 140, rent: 10, color: '#ffc0cb', desc: '有名な「心斎橋筋商店街」があり、最新のファッションが集まるエリア。' },
+    { id: 14, name: '道頓堀', type: 'property', price: 160, rent: 12, color: '#ffc0cb', desc: '巨大看板とグリコ。くいだおれの街を象徴する、世界的な観光スポット。' },
+    { id: 15, name: '新大阪', type: 'property', price: 200, rent: 25, color: '#ccc', desc: '新幹線の発着点。大阪の玄関口として、全国から多くの人が集まる。' },
+    { id: 16, name: '堀江', type: 'property', price: 180, rent: 14, color: '#ffa500', desc: 'オシャレなセレクトショップやカフェが集まる、若者に人気のトレンド発信地。' },
     { id: 17, name: '土地行政', type: 'chest', color: '#fff' },
-    { id: 18, name: 'アメ村', type: 'property', price: 180, rent: 14, color: '#ffa500' },
-    { id: 19, name: '南船場', type: 'property', price: 200, rent: 16, color: '#ffa500' },
+    { id: 18, name: 'アメ村', type: 'property', price: 180, rent: 14, color: '#ffa500', desc: '大阪の原宿。若者文化の中心地で、個性的な古着屋が並ぶ。' },
+    { id: 19, name: '南船場', type: 'property', price: 200, rent: 16, color: '#ffa500', desc: '落ち着いた雰囲気の中に、こだわりのブランドショップが点在する。' },
     { id: 20, name: '駐車場', type: 'parking', color: '#fff' },
-    { id: 21, name: '梅田', type: 'property', price: 220, rent: 18, color: '#ff0000' },
+    { id: 21, name: '梅田', type: 'property', price: 220, rent: 18, color: '#ff0000', desc: '西日本最大のターミナル。地下街は「梅田ダンジョン」と呼ばれるほど広大。' },
     { id: 22, name: 'チャンス', type: 'chance', color: '#fff' },
-    { id: 23, name: '中津', type: 'property', price: 220, rent: 18, color: '#ff0000' },
-    { id: 24, name: '中崎町', type: 'property', price: 240, rent: 20, color: '#ff0000' },
-    { id: 25, name: '南海難波', type: 'railroad', price: 200, rent: 25, color: '#ccc' },
-    { id: 26, name: '北新地', type: 'property', price: 260, rent: 22, color: '#ffff00' },
-    { id: 27, name: '堂島', type: 'property', price: 260, rent: 22, color: '#ffff00' },
+    { id: 23, name: '中津', type: 'property', price: 220, rent: 18, color: '#ff0000', desc: 'レトロな長屋を改装した店が多く、独特のアートな雰囲気が漂う街。' },
+    { id: 24, name: '中崎町', type: 'property', price: 240, rent: 20, color: '#ff0000', desc: '空襲を免れた古い町家が残り、静かな路地にカフェや雑貨屋が潜む。' },
+    { id: 25, name: '南海難波', type: 'property', price: 200, rent: 25, color: '#ccc', desc: 'ミナミの玄関口。関西空港へのアクセスも良く、賑わいが絶えない。' },
+    { id: 26, name: '北新地', type: 'property', price: 260, rent: 22, color: '#ffff00', desc: '西日本随一の高級飲食店街。夜になると華やかな社交場へと変わる。' },
+    { id: 27, name: '堂島', type: 'property', price: 260, rent: 22, color: '#ffff00', desc: 'ビジネス街でありながら、堂島ロールなどのスイーツも有名な気品ある街。' },
     { id: 28, name: '水道局', type: 'utility', price: 150, rent: 10, color: '#ccc' },
-    { id: 29, name: '淀屋橋', type: 'property', price: 280, rent: 24, color: '#ffff00' },
+    { id: 29, name: '淀屋橋', type: 'property', price: 280, rent: 24, color: '#ffff00', desc: '大阪の金融と政治の中心地。歴史的な石造りの建物が並ぶ。' },
     { id: 30, name: '刑務所へ', type: 'gotojail', color: '#fff' },
-    { id: 31, name: '御堂筋', type: 'property', price: 300, rent: 26, color: '#008000' },
-    { id: 32, name: '本町', type: 'property', price: 300, rent: 26, color: '#008000' },
+    { id: 31, name: '御堂筋', type: 'property', price: 300, rent: 26, color: '#008000', desc: '大阪のメインストリート。冬のイルミネーションやイチョウ並木が美しい。' },
+    { id: 32, name: '本町', type: 'property', price: 300, rent: 26, color: '#008000', desc: '船場言葉が残る商いの街。オフィスビルと繊維問屋が共存する。' },
     { id: 33, name: '災害', type: 'disaster', color: '#000' },
-    { id: 34, name: '中之島', type: 'property', price: 320, rent: 28, color: '#008000' },
-    { id: 35, name: 'あべの', type: 'railroad', price: 200, rent: 25, color: '#ccc' },
+    { id: 34, name: '中之島', type: 'property', price: 320, rent: 28, color: '#008000', desc: '水の都・大阪を象徴するエリア。中央公会堂などの美しい建築が集まる。' },
+    { id: 35, name: 'あべの', type: 'property', price: 200, rent: 25, color: '#ccc', desc: '阿倍野・天王寺エリアの中心。近鉄百貨店やあべのハルカスが隣接。' },
     { id: 36, name: 'チャンス', type: 'chance', color: '#fff' },
-    { id: 37, name: '万博公園', type: 'property', price: 350, rent: 35, color: '#00008b' },
+    { id: 37, name: '万博公園', type: 'property', price: 350, rent: 35, color: '#00008b', desc: '1970年大阪万博の跡地。「太陽の塔」が今も未来を見守る広大な公園。' },
     { id: 38, name: '物品税', type: 'tax', price: 100, color: '#fff' },
-    { id: 39, name: '大阪城', type: 'property', price: 400, rent: 50, color: '#00008b' }
+    { id: 39, name: '大阪城', type: 'property', price: 400, rent: 50, color: '#00008b', desc: '秀吉が築いた天下の名城。歴史の息吹を感じる、大阪最大の観光拠点。' }
 ];
 
 // 初期価格（基準値）と家の数を保存しておく
@@ -72,7 +72,8 @@ const OSAKA_EVENTS = [
     { name: '天神祭', text: '梅田・北新地エリアの活気が最高潮！賃貸料が3倍に。', color: '#ff0000', multiplier: 3, targetColors: ['#ff0000', '#ffff00'], duration: 3 },
     { name: '万博開催決定', text: '万博公園エリアへの注目度アップ！賃貸料が3倍に。', color: '#00008b', multiplier: 3, targetColors: ['#00008b'], duration: 4 },
     { name: 'くいだおれ大売出し', text: '難波・道頓堀エリアが食通で溢れる！賃貸料が3倍に。', color: '#ffc0cb', multiplier: 3, targetColors: ['#ffc0cb'], duration: 3 },
-    { name: 'タイガース優勝', text: '大阪全体がお祭り騒ぎ！すべての土地の賃貸料が1.5倍に。', color: '#eab308', multiplier: 1.5, targetColors: 'all', duration: 2 }
+    { name: 'タイガース優勝', text: '大阪全体がお祭り騒ぎ！すべての土地の賃貸料が1.5倍に。', color: '#eab308', multiplier: 1.5, targetColors: 'all', duration: 2 },
+    { name: '特区指定', text: '建築ラッシュ！独占していなくても、止まった土地に増築が可能。', color: '#64748b', type: 'build_rush', duration: 5 }
 ];
 
 
@@ -89,7 +90,8 @@ function saveGame() {
             disasterOwner: s.disasterOwner
         })),
         currentPlayerIndex: currentPlayerIndex,
-        roundHistory: roundHistory
+        roundHistory: roundHistory,
+        activeEvent: activeEvent
     };
     localStorage.setItem("monopoly_save", JSON.stringify(saveData));
 }
@@ -99,7 +101,11 @@ function loadGame() {
     if (!saved) return;
     const data = JSON.parse(saved);
 
-    players = data.players;
+    players = data.players.map(p => {
+        // 古いセーブデータとの互換性のために、欠落しているプロパティを初期化
+        if (p.insuranceGOPasses === undefined) p.insuranceGOPasses = 0;
+        return p;
+    });
     currentPlayerIndex = data.currentPlayerIndex;
     roundHistory = data.roundHistory;
 
@@ -112,11 +118,14 @@ function loadGame() {
         BOARD_SPACES[i].disasterOwner = s.disasterOwner;
     });
 
+    activeEvent = data.activeEvent || null;
+
     document.getElementById("start-screen").classList.remove("active");
     document.getElementById("game-screen").classList.add("active");
 
     initBoard();
     updatePlayerStats();
+    refreshEventUI();
     initChart(true);
     startTurn();
 }
@@ -253,6 +262,56 @@ const insuranceBtn = document.getElementById('insurance-btn');
 const activeEventDisplay = document.getElementById('active-event-display');
 const eventText = document.getElementById('event-text');
 
+// Property Info Elements
+const propertyInfoModal = document.getElementById('property-info-modal');
+const infoName = document.getElementById('info-name');
+const infoPriceLand = document.getElementById('info-price-land');
+const infoPriceBuild = document.getElementById('info-price-build');
+const infoPrice1 = document.getElementById('info-price-1');
+const infoPrice2 = document.getElementById('info-price-2');
+const infoPrice3 = document.getElementById('info-price-3');
+const infoPrice4 = document.getElementById('info-price-4');
+const infoPriceHotel = document.getElementById('info-price-hotel');
+const infoDesc = document.getElementById('info-desc');
+const infoCardHeader = document.getElementById('info-card-header');
+const closeInfoBtn = document.getElementById('close-info-btn');
+
+closeInfoBtn.addEventListener('click', () => {
+    playClickSound();
+    propertyInfoModal.classList.remove('active');
+});
+
+propertyInfoModal.addEventListener('click', (e) => {
+    if (e.target === propertyInfoModal) {
+        playClickSound();
+        propertyInfoModal.classList.remove('active');
+    }
+});
+
+// Player Info Elements
+const playerInfoModal = document.getElementById('player-info-modal');
+const playerInfoName = document.getElementById('player-info-name');
+const playerInfoHeader = document.getElementById('player-info-header');
+const playerInfoMoney = document.getElementById('player-info-money');
+const playerInfoAssets = document.getElementById('player-info-assets');
+const playerInfoLandSum = document.getElementById('player-info-land-sum');
+const playerInfoHouseSum = document.getElementById('player-info-house-sum');
+const playerInfoTotal = document.getElementById('player-info-total');
+const playerInfoInsurance = document.getElementById('player-info-insurance');
+const closePlayerInfoBtn = document.getElementById('close-player-info-btn');
+
+closePlayerInfoBtn.addEventListener('click', () => {
+    playClickSound();
+    playerInfoModal.classList.remove('active');
+});
+
+playerInfoModal.addEventListener('click', (e) => {
+    if (e.target === playerInfoModal) {
+        playClickSound();
+        playerInfoModal.classList.remove('active');
+    }
+});
+
 // Build Modal Elements
 const buildModal = document.getElementById('build-modal');
 const buildList = document.getElementById('build-list');
@@ -307,15 +366,9 @@ let landAdminTimeout;
 let currentLandAdminAction;
 
 landAdminModal.addEventListener('click', (e) => {
-    // ボタンや入力をクリックしたときはモーダルを閉じないようにする
-    if (e.target !== landAdminModal && !e.target.classList.contains('land-admin-card') && e.target.closest('.land-admin-interaction')) {
-        return;
-    }
-
-    if (landAdminModal.classList.contains('active')) {
-        playClickSound();
-        closeLandAdmin();
-    }
+    // 土地行政モーダルは重要な選択を行うため、外側クリックで閉じないようにする
+    // (ユーザーの要望により、誤操作防止のために入札などのイベント中に勝手に閉じるのを防ぐ)
+    return;
 });
 
 function closeLandAdmin() {
@@ -344,7 +397,7 @@ function resetBoardState() {
         delete space.owner;
         if (space.houses !== undefined) space.houses = 0;
         if (space.basePrice !== undefined) space.price = space.basePrice;
-        if (space.baseRent !== undefined) space.rent = space.baseRent;
+        updateSpaceRent(space);
         delete space.disasterEffect;
         delete space.disasterOwner;
     });
@@ -364,7 +417,8 @@ function startGame(humanCount) {
             inJail: false,
             jailTurns: 0,
             properties: [],
-            hasInsurance: false
+            hasInsurance: false,
+            insuranceGOPasses: 0
         });
     }
 
@@ -490,6 +544,31 @@ function initBoard() {
         }
 
         spaceEl.innerHTML = innerHTML;
+
+        // 災害（賃料無料）の状態を復元
+        if (space.disasterEffect === 'rent-free') {
+            const indicator = document.createElement('div');
+            indicator.className = 'rent-free-indicator';
+            spaceEl.appendChild(indicator);
+        }
+
+        // 追加：マスクリック時の情報表示（通常の時のみ）
+        if (space.type === 'property' || space.type === 'railroad') {
+            spaceEl.style.cursor = 'pointer';
+            spaceEl.addEventListener('click', (e) => {
+                // 他のモーダルが表示されていないときだけ開く
+                if (!propertyModal.classList.contains('active') && 
+                    !buildModal.classList.contains('active') && 
+                    !chanceModal.classList.contains('active') && 
+                    !disasterModal.classList.contains('active') && 
+                    !landAdminModal.classList.contains('active')) {
+                    
+                    playClickSound();
+                    showPropertyInfo(space);
+                }
+            });
+        }
+
         boardElement.appendChild(spaceEl);
     });
 
@@ -499,6 +578,12 @@ function initBoard() {
         token.className = 'token';
         token.id = `token-${player.id}`;
         token.style.backgroundColor = player.color;
+        token.style.cursor = 'pointer';
+        token.addEventListener('click', (e) => {
+            e.stopPropagation();
+            playClickSound();
+            showPlayerDetail(player);
+        });
         boardElement.appendChild(token);
     });
 
@@ -540,6 +625,14 @@ function updatePlayerStats() {
             </div>
             <div class="player-money">$${player.money}</div>
         `;
+        
+        // Add click listener for detail
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => {
+            playClickSound();
+            showPlayerDetail(player);
+        });
+        
         playerStatsElement.appendChild(card);
     });
 }
@@ -564,8 +657,10 @@ function getBuildableSpaces(player) {
     const colors = [...new Set(ownedProperties.map(s => s.color))];
 
     colors.forEach(color => {
-        if (hasMonopoly(player.id, color)) {
-            const group = BOARD_SPACES.filter(s => s.type === 'property' && s.color === color);
+        // 通常の独占状態、または特区指定（建築ラッシュ）イベント中であれば建築可能
+        if (hasMonopoly(player.id, color) || (activeEvent && activeEvent.type === 'build_rush')) {
+            // プレイヤーが所有しているその色の土地だけを対象にする
+            const group = BOARD_SPACES.filter(s => s.type === 'property' && s.color === color && s.owner === player.id);
             const minHouses = Math.min(...group.map(s => s.houses));
             group.forEach(s => {
                 if (s.houses === minHouses && s.houses < 5) {
@@ -604,19 +699,142 @@ function updateInsuranceButtonVisibility() {
     }
 }
 
+/**
+ * 土地のレンタル料を最新の状態（建物数、地価変動）に基づいて更新する
+ */
+function updateSpaceRent(space) {
+    if (space.type !== 'property') return;
+
+    // 現在の地価倍率を計算 (基準価格に対する現在価格の比)
+    const multiplier = space.basePrice > 0 ? (space.price / space.basePrice) : 1;
+
+    // 建物による家賃計算
+    // 家1軒につき初期価格の50%分増加、ホテル(5軒)はさらに初期価格分をボーナス加算
+    const increase = space.basePrice * 0.5;
+    let rent = space.baseRent + (space.houses * increase);
+    if (space.houses === 5) {
+        rent += space.basePrice; // ホテルボーナス
+    }
+
+    // 地価変動倍率を全体（土地＋建物）に適用
+    space.rent = Math.round(rent * multiplier);
+}
+
+function getHousePrice(space) {
+    const color = space.color;
+    // 茶・濃藍（ブラウン・ライトブルー）： 50ドル
+    if (color === '#8b4513' || color === '#87ceeb') return 50;
+    // 桃・橙（ピンク・オレンジ）： 100ドル
+    if (color === '#ffc0cb' || color === '#ffa500') return 100;
+    // 赤・黄（レッド・イエロー）： 150ドル
+    if (color === '#ff0000' || color === '#ffff00') return 150;
+    // 緑・紺（グリーン・ダークブルー）： 200ドル
+    if (color === '#008000' || color === '#00008b') return 200;
+    // 灰色（元鉄道など）は150ドルとする
+    return 150;
+}
+
+function getUpgradePrice(space) {
+    const hp = getHousePrice(space);
+    if (space.houses === 4) {
+        // ホテルの建築費は、150ドル ＋ 家2軒分の費用
+        return 150 + (2 * hp);
+    }
+    return hp;
+}
+
+function showPropertyInfo(space) {
+    if (space.type !== 'property' && space.type !== 'railroad') return;
+    infoName.innerText = space.name;
+    infoCardHeader.style.backgroundColor = space.color;
+    
+    infoPriceLand.innerText = `$${space.basePrice}`;
+    
+    const hPrice = getHousePrice(space);
+    const hotelPrice = 150 + (2 * hPrice);
+    infoPriceBuild.innerHTML = `家: $${hPrice}<br>ホテル: $${hotelPrice}`;
+    
+    // 家賃の計算（基本価格に基づく）
+    const increase = space.basePrice * 0.5;
+    const r1 = space.baseRent + (1 * increase);
+    const r2 = space.baseRent + (2 * increase);
+    const r3 = space.baseRent + (3 * increase);
+    const r4 = space.baseRent + (4 * increase);
+    const rHotel = space.baseRent + (5 * increase) + space.basePrice;
+    
+    infoPrice1.innerText = `$${Math.round(r1)}`;
+    infoPrice2.innerText = `$${Math.round(r2)}`;
+    infoPrice3.innerText = `$${Math.round(r3)}`;
+    infoPrice4.innerText = `$${Math.round(r4)}`;
+    infoPriceHotel.innerText = `$${Math.round(rHotel)}`;
+    
+    infoDesc.innerText = space.desc || '歴史ある大阪の街並みを楽しめるエリアです。';
+    
+    propertyInfoModal.classList.add('active');
+}
+
+function showPlayerDetail(player) {
+    playerInfoName.innerText = player.name;
+    playerInfoHeader.style.backgroundColor = player.color;
+    playerInfoMoney.innerText = `$${player.money}`;
+    
+    let landSum = 0;
+    let houseSum = 0;
+    
+    player.properties.forEach(id => {
+        const space = BOARD_SPACES[id];
+        landSum += space.basePrice;
+        
+        if (space.houses > 0) {
+            const hPrice = getHousePrice(space);
+            if (space.houses <= 4) {
+                houseSum += space.houses * hPrice;
+            } else {
+                // ホテル(5軒目)
+                const hotelUpgradeCost = 150 + (2 * hPrice);
+                houseSum += (4 * hPrice) + hotelUpgradeCost;
+            }
+        }
+    });
+    
+    playerInfoLandSum.innerText = `$${landSum}`;
+    playerInfoHouseSum.innerText = `$${houseSum}`;
+    playerInfoAssets.innerText = `$${landSum + houseSum}`;
+    playerInfoTotal.innerText = `$${player.money + landSum + houseSum}`;
+    
+    playerInfoInsurance.innerText = player.hasInsurance ? `加入中 (あと${player.insuranceGOPasses}回通過まで) ✅` : '未加入 ❌';
+    playerInfoInsurance.style.color = player.hasInsurance ? '#4ade80' : '#ef4444';
+    
+    playerInfoModal.classList.add('active');
+}
+
 function triggerOsakaEvent() {
+    // 既存の市場変動イベントがあればリセット
+    if (activeEvent && activeEvent.type === 'market') {
+        resetMarketPrices();
+    }
+
     const event = OSAKA_EVENTS[Math.floor(Math.random() * OSAKA_EVENTS.length)];
     activeEvent = { ...event };
-    
-    eventText.innerText = `【${activeEvent.name}】${activeEvent.text} (あと${activeEvent.duration}ターン)`;
-    activeEventDisplay.style.display = 'block';
-    activeEventDisplay.style.borderColor = activeEvent.color;
-    activeEventDisplay.style.color = activeEvent.color;
-    activeEventDisplay.style.background = `${activeEvent.color}22`;
+    refreshEventUI();
     
     log(`!! イベント発生 !! 「${activeEvent.name}」が始まりました！`);
     playTone(600, 'sine', 0.3, 0.1);
     setTimeout(() => playTone(800, 'sine', 0.3, 0.1), 150);
+}
+
+function refreshEventUI() {
+    if (!activeEvent) {
+        activeEventDisplay.style.display = 'none';
+        return;
+    }
+    eventText.innerText = `【${activeEvent.name}】${activeEvent.text} (あと${activeEvent.duration}ターン)`;
+    activeEventDisplay.style.display = 'block';
+    activeEventDisplay.style.borderColor = activeEvent.color;
+    activeEventDisplay.style.color = activeEvent.color;
+    // 「万博開催決定」や「紺色の市場変動」は色が濃く見にくいため、背景を明るくする
+    const isDarkColor = activeEvent.name === '万博開催決定' || activeEvent.color === '#00008b';
+    activeEventDisplay.style.background = isDarkColor ? '#dbeafe' : `${activeEvent.color}22`;
 }
 
 function updateActiveEvent() {
@@ -625,11 +843,29 @@ function updateActiveEvent() {
     activeEvent.duration--;
     if (activeEvent.duration <= 0) {
         log(`「${activeEvent.name}」が終了しました。`);
+        
+        // 市場変動イベント終了時の価格リセット
+        if (activeEvent.type === 'market') {
+            resetMarketPrices();
+        }
+        
         activeEvent = null;
-        activeEventDisplay.style.display = 'none';
-    } else {
-        eventText.innerText = `【${activeEvent.name}】${activeEvent.text} (あと${activeEvent.duration}ターン)`;
     }
+    refreshEventUI();
+}
+
+function resetMarketPrices() {
+    BOARD_SPACES.forEach(space => {
+        if (space.type === 'property') {
+            space.price = space.basePrice;
+            updateSpaceRent(space);
+            const spaceEl = document.getElementById(`space-${space.id}`);
+            if (spaceEl) {
+                const priceEl = spaceEl.querySelector('.space-price');
+                if (priceEl) priceEl.innerText = `$${space.price}`;
+            }
+        }
+    });
 }
 
 buildBtn.addEventListener('click', () => {
@@ -646,7 +882,7 @@ function openBuildModal() {
         buildList.innerHTML = '<p>現在建築可能な土地はありません。</p>';
     } else {
         buildable.forEach(space => {
-            const cost = space.basePrice;
+            const cost = getUpgradePrice(space);
             const canAfford = player.money >= cost;
             const nextLevel = space.houses === 4 ? 'ホテル' : `家${space.houses + 1}軒目`;
 
@@ -674,15 +910,14 @@ function openBuildModal() {
 }
 
 function buildHouse(player, space) {
-    if (player.money < space.basePrice || space.houses >= 5) return;
+    const cost = getUpgradePrice(space);
+    if (player.money < cost || space.houses >= 5) return;
 
-    player.money -= space.basePrice;
+    player.money -= cost;
     space.houses++;
 
-    // 家賃の更新 (家1軒につき初期価格の50%分増加、ホテルはさらに倍増などの簡易計算)
-    const increase = space.basePrice * 0.5;
-    space.rent = Math.round(space.baseRent + (space.houses * increase));
-    if (space.houses === 5) space.rent += space.basePrice; // ホテルボーナス
+    // 家賃の更新
+    updateSpaceRent(space);
 
     // UI更新
     const container = document.getElementById(`houses-${space.id}`);
@@ -708,7 +943,8 @@ function tryCPUBuild(player) {
     while (buildable.length > 0) {
         // CPUはランダムな候補に、所持金が(建築費+500)以上あれば建てる
         const space = buildable[Math.floor(Math.random() * buildable.length)];
-        if (player.money >= space.basePrice + 500) {
+        const cost = getUpgradePrice(space);
+        if (player.money >= cost + 500) {
             buildHouse(player, space);
             buildable = getBuildableSpaces(player); // 再計算
         } else {
@@ -721,7 +957,8 @@ function tryCPUInsurance(player) {
     if (!player.hasInsurance && player.money >= INSURANCE_PRICE + 800) { // ある程度余裕があるときだけ加入
         player.money -= INSURANCE_PRICE;
         player.hasInsurance = true;
-        log(`${player.name} は災害保険に加入しました。`);
+        player.insuranceGOPasses = 5;
+        log(`${player.name} は災害保険に加入しました（5回のGO通過まで有効）。`);
         updatePlayerStats();
     }
 }
@@ -786,7 +1023,8 @@ insuranceBtn.addEventListener('click', () => {
     if (player.money >= INSURANCE_PRICE && !player.hasInsurance) {
         player.money -= INSURANCE_PRICE;
         player.hasInsurance = true;
-        log(`${player.name} は災害保険に加入しました。`);
+        player.insuranceGOPasses = 5;
+        log(`${player.name} は災害保険に加入しました（5回のGO通過まで有効）。`);
         playBuySound();
         updatePlayerStats();
         updateInsuranceButtonVisibility();
@@ -851,12 +1089,13 @@ function movePlayer(player, amount) {
         updatePlayerStats();
         clearDisasterEffects(player);
 
-        // プレイヤー1（先頭）がGOを通過したら地価変動または大阪名物イベントを発生
-        if (player.id === 0) {
-            if (Math.random() < 0.5) {
-                triggerMarketCrash();
-            } else {
+        // どのプレイヤーが通過してもイベント発生のチャンス（確率を0.6から0.35に下方修正）
+        if (Math.random() < 0.35) {
+            // 大阪名物イベント(60%)、それ以外は地価変動(40%)
+            if (Math.random() < 0.6) {
                 triggerOsakaEvent();
+            } else {
+                triggerMarketCrash();
             }
         }
     }
@@ -890,9 +1129,10 @@ function resolveSpace(player, space) {
 
             // 大阪名物イベントによる賃料倍率
             if (activeEvent) {
-                if (activeEvent.targetColors === 'all' || activeEvent.targetColors.includes(space.color)) {
+                // targetColors が存在し、かつ対象であるかチェック
+                if (activeEvent.targetColors && (activeEvent.targetColors === 'all' || activeEvent.targetColors.includes(space.color))) {
                     const originalRent = rent;
-                    rent = Math.round(rent * activeEvent.multiplier);
+                    rent = Math.round(rent * (activeEvent.multiplier || 1));
                     log(`【${activeEvent.name}】の影響でレンタル料が $${originalRent} から $${rent} にアップ！`);
                 }
             }
@@ -908,6 +1148,12 @@ function resolveSpace(player, space) {
                 updatePlayerStats();
             } else if (space.disasterEffect === "rent-free") {
                 log(`${player.name} は災害の影響でレンタル料を支払わずに済んだ！`);
+            }
+        } else if (space.owner === player.id) {
+            // 特区指定（建築ラッシュ）イベント中の建築処理
+            if (activeEvent && activeEvent.type === 'build_rush' && space.type === 'property' && space.houses < 5) {
+                handleBuildRush(player, space);
+                return;
             }
         }
     } else if (space.type === 'tax') {
@@ -953,6 +1199,60 @@ const CHANCE_CARDS = [
     { type: 'income', text: "TV出演。\n$100を受け取る", action: (p) => { p.money += 100; updatePlayerStats(); playBuySound(); checkBankrupt(p); showEndTurn(); } },
     { type: 'income', text: "ポケモンカードを交番に届ける。\n$5を受け取る", action: (p) => { p.money += 5; updatePlayerStats(); playBuySound(); checkBankrupt(p); showEndTurn(); } }
 ];
+
+async function handleBuildRush(player, space) {
+    const cost = getUpgradePrice(space);
+    const nextLevel = space.houses === 4 ? 'ホテル' : `家${space.houses + 1}軒目`;
+
+    if (player.isCPU) {
+        if (player.money >= cost + 200) { // CPUは少し余裕がある時だけ建てる
+            log(`${player.name} は特区指定を利用して ${space.name} に ${nextLevel} を建築した！`);
+            buildHouse(player, space);
+        }
+        showEndTurn();
+        return;
+    }
+
+    // Player confirmation
+    const canAfford = player.money >= cost;
+    const confirmBuild = await new Promise(resolve => {
+        landAdminInteraction.innerHTML = '';
+        landAdminText.innerText = `【特区指定】建築ラッシュです！\n${space.name} に ${nextLevel} を建築しますか？\n(費用: $${cost})`;
+        
+        const yesBtn = document.createElement('button');
+        yesBtn.className = 'yes-btn'; yesBtn.innerText = `建築する ($${cost})`;
+        yesBtn.disabled = !canAfford;
+        
+        const noBtn = document.createElement('button');
+        noBtn.className = 'no-btn'; noBtn.innerText = '今回は見送る';
+        
+        // 15秒後に自動で見送り
+        const timeout = setTimeout(() => {
+            log(`${player.name} は建築を見送りました（タイムアウト）。`);
+            resolve(false);
+        }, 15000);
+
+        yesBtn.onclick = () => {
+            clearTimeout(timeout);
+            resolve(true);
+        };
+        noBtn.onclick = () => {
+            clearTimeout(timeout);
+            resolve(false);
+        };
+        
+        landAdminInteraction.appendChild(yesBtn);
+        landAdminInteraction.appendChild(noBtn);
+        landAdminModal.classList.add('active');
+    });
+
+    landAdminModal.classList.remove('active');
+    if (confirmBuild) {
+        log(`${player.name} は特区指定を利用して ${space.name} に ${nextLevel} を建築した！`);
+        buildHouse(player, space);
+    }
+    showEndTurn();
+}
 
 function handleChance(player) {
     const card = CHANCE_CARDS[Math.floor(Math.random() * CHANCE_CARDS.length)];
@@ -1028,8 +1328,9 @@ function handleDisaster(player) {
         const targetOwner = players[targetSpace.owner];
 
         if (targetOwner.hasInsurance) {
-            log(`【災害保険】が発動！ ${targetOwner.name} の所有する ${targetSpace.name} は守られました。`);
-            targetOwner.hasInsurance = false; // 保険を消費
+            log(`【災害保険】が発動！ ${targetOwner.name} の所有する ${targetSpace.name} は守られましたが、保険は失効しました。`);
+            targetOwner.hasInsurance = false;
+            targetOwner.insuranceGOPasses = 0;
             updatePlayerStats();
             showEndTurn();
         } else {
@@ -1071,7 +1372,7 @@ function applyDestructionDisaster(player, space, mode, lossChance = 0) {
     targets.forEach(s => {
         const owner = players[s.owner];
         s.houses = 0;
-        s.rent = s.baseRent;
+        updateSpaceRent(s);
         log(`${s.name} の建物がすべて失われた！`);
 
         if (Math.random() < lossChance) {
@@ -1119,6 +1420,25 @@ function updateSpaceUI(space) {
 }
 
 function clearDisasterEffects(player) {
+    // 災害保険の有効期限チェック
+    if (player.hasInsurance) {
+        // 数値でない（NaNなど）場合のセーフティ
+        if (typeof player.insuranceGOPasses !== 'number' || isNaN(player.insuranceGOPasses)) {
+            player.insuranceGOPasses = 0;
+            player.hasInsurance = false;
+            return;
+        }
+
+        player.insuranceGOPasses--;
+        if (player.insuranceGOPasses <= 0) {
+            player.hasInsurance = false;
+            log(`${player.name} の災害保険の有効期限が切れました。`);
+        } else {
+            log(`${player.name} の災害保険はあと ${player.insuranceGOPasses} 回のGO通過まで有効です。`);
+        }
+        updateInsuranceButtonVisibility();
+    }
+
     BOARD_SPACES.forEach(s => {
         if (s.disasterEffect === 'rent-free' && s.disasterOwner === player.id) {
             delete s.disasterEffect;
@@ -1296,6 +1616,11 @@ function updateChartData() {
 
 // 地価変動イベント
 function triggerMarketCrash() {
+    // 既存の市場変動イベントがあれば先にリセット
+    if (activeEvent && activeEvent.type === 'market') {
+        resetMarketPrices();
+    }
+
     const colorGroups = [
         { color: "#8b4513", name: "茶色" },
         { color: "#87ceeb", name: "水色" },
@@ -1311,7 +1636,16 @@ function triggerMarketCrash() {
     const isUp = Math.random() > 0.3;
     const multiplier = isUp ? 1.5 : 0.5;
 
-    log(`【市場変動】${group.name} の地価が${isUp ? "上昇" : "下落"}しました！`);
+    activeEvent = {
+        name: `市場変動: ${group.name}`,
+        text: `${group.name}の地価が${isUp ? "上昇" : "下落"}中！（${multiplier}倍）`,
+        color: group.color,
+        multiplier: multiplier,
+        duration: 5,
+        type: 'market'
+    };
+
+    log(`【市場変動】${group.name} の地価が${isUp ? "上昇" : "下落"}しました！（あと5ターン）`);
 
     BOARD_SPACES.forEach(space => {
         if (space.type === "property") {
@@ -1320,29 +1654,11 @@ function triggerMarketCrash() {
             if (space.color === group.color) {
                 // 選ばれた色は基準値から変動
                 space.price = Math.round(space.basePrice * multiplier);
-                space.rent = Math.round(space.baseRent * multiplier);
-
-                // 枠線の色を更新
-                if (spaceEl) {
-                    if (multiplier > 1) {
-                        spaceEl.classList.add('price-up');
-                        spaceEl.classList.remove('price-down');
-                    } else if (multiplier < 1) {
-                        spaceEl.classList.add('price-down');
-                        spaceEl.classList.remove('price-up');
-                    } else {
-                        spaceEl.classList.remove('price-up', 'price-down');
-                    }
-                }
+                updateSpaceRent(space);
             } else {
-                // それ以外の色は基準値に戻す
+                // それ以外の色は基準値に戻す（市場変動は常に1色のみ対象とする）
                 space.price = space.basePrice;
-                space.rent = space.baseRent;
-
-                // 枠線を解除
-                if (spaceEl) {
-                    spaceEl.classList.remove('price-up', 'price-down');
-                }
+                updateSpaceRent(space);
             }
 
             // UI上の価格表示を更新
@@ -1352,6 +1668,8 @@ function triggerMarketCrash() {
             }
         }
     });
+
+    refreshEventUI();
 
     const msgBox = document.getElementById('center-message');
     const msgText = document.getElementById('center-message-text');
@@ -1690,10 +2008,19 @@ function getPlayerBid(player, space, minBid) {
             passBtn.className = 'pass-btn'; passBtn.innerText = '辞退';
             bidBtn.onclick = () => {
                 const v = parseInt(input.value);
-                if (v >= minBid && v <= player.money) resolve(v);
-                else alert("金額が正しくありません。");
+                if (v >= minBid && v <= player.money) {
+                    if (confirm(`$${v} で入札しますか？`)) {
+                        resolve(v);
+                    }
+                } else {
+                    alert("所持金が足りないか、最低入札額に達していません。");
+                }
             };
-            passBtn.onclick = () => resolve(0);
+            passBtn.onclick = () => {
+                if (confirm("この土地の入札を辞退しますか？")) {
+                    resolve(0);
+                }
+            };
             container.appendChild(input); container.appendChild(bidBtn);
             landAdminInteraction.appendChild(container); landAdminInteraction.appendChild(passBtn);
         }
@@ -1895,7 +2222,7 @@ async function handleBuildingTransfer(player, space) {
                 log(`${player.name} は $200 を支払い、${space.name} の建物を引き継いだ。`);
             } else {
                 space.houses = 0;
-                space.rent = space.baseRent;
+                updateSpaceRent(space);
                 log(`${player.name} は ${space.name} の建物を解体した。`);
             }
         } else {
@@ -1918,11 +2245,11 @@ async function handleBuildingTransfer(player, space) {
                 } else {
                     alert("お金が足りないため、建物は解体されました。");
                     space.houses = 0;
-                    space.rent = space.baseRent;
+                    updateSpaceRent(space);
                 }
             } else {
                 space.houses = 0;
-                space.rent = space.baseRent;
+                updateSpaceRent(space);
                 log(`${player.name} は ${space.name} の建物を解体した。`);
             }
         }
