@@ -62,7 +62,51 @@ body {
     display: flex;
     gap: 1.5rem;
     justify-content: center;
-    margin-top: 3rem;
+    margin-top: 2rem;
+}
+
+/* Name Input */
+.name-input-container {
+    margin-bottom: 2rem;
+    text-align: left;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.name-input-container label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    color: #94a3b8;
+}
+
+#player-name-input {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.2rem;
+    background: rgba(15, 23, 42, 0.5);
+    border: 2px solid rgba(59, 130, 246, 0.3);
+    border-radius: 0.75rem;
+    color: white;
+    outline: none;
+    transition: all 0.3s;
+}
+
+#player-name-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.input-hint {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: #64748b;
+    text-align: center;
+}
+
+#player-name-input:invalid {
+    border-color: #ef4444;
 }
 
 .menu-btn {
@@ -376,6 +420,17 @@ body {
     transform: none;
 }
 
+.button-row {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.button-row .action-btn {
+    flex: 1;
+    width: auto;
+}
+
 .log-panel {
     background: var(--card-bg);
     padding: 1.5rem;
@@ -545,7 +600,6 @@ body {
 .house-icon {
     width: 10px;
     height: 10px;
-    background-color: #22c55e; /* Green for houses */
     border: 1px solid #000;
     box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
@@ -553,7 +607,6 @@ body {
 .hotel-icon {
     width: 14px;
     height: 14px;
-    background-color: #ef4444; /* Red for hotel */
     border: 1px solid #000;
     box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }

@@ -246,7 +246,7 @@ const startScreen = document.getElementById('start-screen');
 const gameScreen = document.getElementById('game-screen');
 const boardElement = document.getElementById('board');
 const playerStatsElement = document.getElementById('player-stats');
-const currentTurnDisplay = document.getElementById('current-turn-display');
+// const currentTurnDisplay = document.getElementById('current-turn-display');
 const rollBtn = document.getElementById('roll-btn');
 const buildBtn = document.getElementById('build-btn');
 const endTurnBtn = document.getElementById('end-turn-btn');
@@ -366,9 +366,13 @@ let landAdminTimeout;
 let currentLandAdminAction;
 
 landAdminModal.addEventListener('click', (e) => {
-    // 土地行政モーダルは重要な選択を行うため、外側クリックで閉じないようにする
-    // (ユーザーの要望により、誤操作防止のために入札などのイベント中に勝手に閉じるのを防ぐ)
-    return;
+    if (landAdminModal.classList.contains('active')) {
+        // インタラクション（入札ボタンなど）が表示されていない場合、または背景クリック時はスキップを許可
+        if (landAdminInteraction.innerHTML === '' || e.target === landAdminModal) {
+            playClickSound();
+            closeLandAdmin();
+        }
+    }
 });
 
 function closeLandAdmin() {
@@ -388,7 +392,18 @@ document.querySelectorAll('.player-select .menu-btn').forEach(btn => {
         initAudio();
         playClickSound();
         const humanCount = parseInt(e.target.dataset.players);
-        startGame(humanCount);
+        
+        const nameInput = document.getElementById('player-name-input');
+        let customName = nameInput.value.trim();
+        
+        // バリデーション: 半角英数字、ハイフン、アンダーバーのみ
+        const nameRegex = /^[A-Za-z0-9\-_]+$/;
+        if (customName !== '' && !nameRegex.test(customName)) {
+            alert('名前は半角英数字、ハイフン(-)、アンダーバー(_)のみ使用できます。');
+            return;
+        }
+        
+        startGame(humanCount, customName);
     });
 });
 
@@ -403,13 +418,24 @@ function resetBoardState() {
     });
 }
 
-function startGame(humanCount) {
+function startGame(humanCount, customName = '') {
     resetBoardState();
     players = [];
     for (let i = 0; i < 4; i++) {
+        let name;
+        if (i < humanCount) {
+            if (customName) {
+                name = humanCount > 1 ? `${customName}_${i + 1}` : customName;
+            } else {
+                name = `Player ${i + 1}`;
+            }
+        } else {
+            name = `CPU ${i + 1}`;
+        }
+
         players.push({
             id: i,
-            name: i < humanCount ? `Player ${i + 1}` : `CPU ${i + 1}`,
+            name: name,
             isCPU: i >= humanCount,
             money: 1500,
             position: 0,
@@ -515,18 +541,8 @@ function initBoard() {
             if (space.type !== 'utility') innerHTML += `<div class="space-color" style="background-color: ${space.color}"></div>`;
 
             // 建物（家・ホテル）の状態を復元
-            let housesHTML = '';
-            if (space.type === 'property' && space.houses > 0) {
-                if (space.houses === 5) {
-                    housesHTML = '<div class="hotel-icon"></div>';
-                } else {
-                    for (let i = 0; i < space.houses; i++) {
-                        housesHTML += '<div class="house-icon"></div>';
-                    }
-                }
-            }
             if (space.type === 'property') {
-                innerHTML += `<div class="house-container" id="houses-${index}">${housesHTML}</div>`;
+                innerHTML += `<div class="house-container" id="houses-${index}">${getHousesHTML(space)}</div>`;
             }
 
             innerHTML += `<div class="space-name">${space.name}</div>`;
@@ -613,6 +629,7 @@ function updatePlayerStats() {
     updatePropertyChart();
     saveGame();
     playerStatsElement.innerHTML = '';
+
     players.forEach((player, i) => {
         const card = document.createElement('div');
         card.className = `player-card ${i === currentPlayerIndex ? 'active' : ''}`;
@@ -621,7 +638,7 @@ function updatePlayerStats() {
         card.innerHTML = `
             <div class="player-info">
                 <div class="player-icon" style="background-color: ${player.color}"></div>
-                <div class="player-name">${player.name}</div>
+                <div class="player-name">${player.name}${i === currentPlayerIndex ? ' <span style="font-size: 0.8rem; opacity: 0.8;">(手番)</span>' : ''}</div>
             </div>
             <div class="player-money">$${player.money}</div>
         `;
@@ -634,6 +651,13 @@ function updatePlayerStats() {
         });
         
         playerStatsElement.appendChild(card);
+
+        // 手番のプレイヤーのカードまで自動的にスクロールする
+        if (i === currentPlayerIndex) {
+            setTimeout(() => {
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
+        }
     });
 }
 
@@ -692,10 +716,27 @@ function updateInsuranceButtonVisibility() {
         insuranceBtn.style.display = 'none';
         return;
     }
-    if (!player.hasInsurance && player.money >= INSURANCE_PRICE && rollBtn.style.visibility === 'visible') {
+    if (!player.hasInsurance && player.money >= INSURANCE_PRICE && rollBtn.style.display !== 'none') {
         insuranceBtn.style.display = 'block';
     } else {
         insuranceBtn.style.display = 'none';
+    }
+}
+
+function getHousesHTML(space) {
+    if (space.type !== 'property' || !space.houses || space.houses === 0) return '';
+    
+    const owner = players[space.owner];
+    const color = owner ? owner.color : '#22c55e'; // Default to green if no owner (shouldn't happen)
+    
+    if (space.houses === 5) {
+        return `<div class="hotel-icon" style="background-color: ${color}"></div>`;
+    } else {
+        let html = '';
+        for (let i = 0; i < space.houses; i++) {
+            html += `<div class="house-icon" style="background-color: ${color}"></div>`;
+        }
+        return html;
     }
 }
 
@@ -920,17 +961,7 @@ function buildHouse(player, space) {
     updateSpaceRent(space);
 
     // UI更新
-    const container = document.getElementById(`houses-${space.id}`);
-    if (container) {
-        container.innerHTML = '';
-        if (space.houses === 5) {
-            container.innerHTML = '<div class="hotel-icon"></div>';
-        } else {
-            for (let i = 0; i < space.houses; i++) {
-                container.innerHTML += '<div class="house-icon"></div>';
-            }
-        }
-    }
+    updateSpaceUI(space);
 
     playBuySound();
     log(`${player.name} は ${space.name} に建物を建築した！`);
@@ -967,10 +998,8 @@ function tryCPUInsurance(player) {
 function startTurn() {
     updatePlayerStats();
     const player = players[currentPlayerIndex];
-    currentTurnDisplay.innerText = `${player.name} のターン`;
-    currentTurnDisplay.style.color = player.color;
 
-    rollBtn.style.visibility = 'visible';
+    rollBtn.style.display = 'block';
     endTurnBtn.style.display = 'none';
 
     updateBuildButtonVisibility();
@@ -1394,18 +1423,21 @@ function applyDestructionDisaster(player, space, mode, lossChance = 0) {
 function updateSpaceUI(space) {
     updatePropertyChart();
     saveGame();
+    
+    // 建物（家・ホテル）の更新
     const container = document.getElementById(`houses-${space.id}`);
     if (container) {
-        container.innerHTML = '';
-        if (space.houses === 5) {
-            container.innerHTML = '<div class="hotel-icon"></div>';
-        } else if (space.houses > 0) {
-            for (let i = 0; i < space.houses; i++) {
-                container.innerHTML += '<div class="house-icon"></div>';
-            }
-        }
+        container.innerHTML = getHousesHTML(space);
     }
 
+    // 所有者の更新
+    const ownerIndicator = document.getElementById(`owner-${space.id}`);
+    if (ownerIndicator) {
+        const ownerColor = (space.owner !== undefined && players[space.owner]) ? players[space.owner].color : 'transparent';
+        ownerIndicator.style.backgroundColor = ownerColor;
+    }
+
+    // 災害（賃料無料）の状態を復元
     const spaceEl = document.getElementById(`space-${space.id}`);
     if (spaceEl) {
         const existingIndicator = spaceEl.querySelector('.rent-free-indicator');
@@ -1511,10 +1543,7 @@ function buyProperty(player, space) {
     player.properties.push(space.id);
 
     // Update Board UI
-    const ownerIndicator = document.getElementById(`owner-${space.id}`);
-    if (ownerIndicator) {
-        ownerIndicator.style.backgroundColor = player.color;
-    }
+    updateSpaceUI(space);
 
     playBuySound();
     log(`${player.name} は ${space.name} を購入した！`);
@@ -1580,7 +1609,7 @@ function checkBankrupt(player) {
     }
 }
 function showEndTurn() {
-    rollBtn.style.visibility = "hidden";
+    rollBtn.style.display = "none";
     buildBtn.style.display = "none";
     endTurnBtn.style.display = "none";
     setTimeout(endTurn, 1500);
@@ -1855,6 +1884,11 @@ function handleLandSale(player) {
 
     if (unowned.length === 0) {
         landAdminText.innerText = "現在、払い下げ可能な土地はありません。";
+        const btn = document.createElement('button');
+        btn.className = 'action-btn';
+        btn.innerText = '閉じる';
+        btn.onclick = () => closeLandAdmin();
+        landAdminInteraction.appendChild(btn);
         return;
     }
 
@@ -1894,8 +1928,7 @@ function buyPropertyAtPrice(player, space, price) {
     player.money -= price;
     space.owner = player.id;
     player.properties.push(space.id);
-    const ownerIndicator = document.getElementById(`owner-${space.id}`);
-    if (ownerIndicator) ownerIndicator.style.backgroundColor = player.color;
+    updateSpaceUI(space);
     playBuySound();
     log(`${player.name} は払い下げにより ${space.name} を $${price} で取得した！`);
     updatePlayerStats();
@@ -1926,6 +1959,11 @@ function handleLandConsolidation(player) {
 
     log(`区画整理により ${colorName} の土地がすべて空き地になりました。`);
     updatePlayerStats();
+    const btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.innerText = '閉じる';
+    btn.onclick = () => closeLandAdmin();
+    landAdminInteraction.appendChild(btn);
 }
 
 async function handleCompetitiveBidding(player, specificTarget = null) {
@@ -2031,17 +2069,32 @@ async function handleLandExchange(player) {
     landAdminType.innerText = "土地交換";
     if (player.properties.length === 0) {
         landAdminText.innerText = "交換できる土地がありません。";
+        const btn = document.createElement('button');
+        btn.className = 'action-btn';
+        btn.innerText = '閉じる';
+        btn.onclick = () => closeLandAdmin();
+        landAdminInteraction.appendChild(btn);
         return;
     }
 
     const othersProps = BOARD_SPACES.filter(s => s.owner !== undefined && s.owner !== player.id);
     if (othersProps.length === 0) {
         landAdminText.innerText = "相手が土地を持っていません。";
+        const btn = document.createElement('button');
+        btn.className = 'action-btn';
+        btn.innerText = '閉じる';
+        btn.onclick = () => closeLandAdmin();
+        landAdminInteraction.appendChild(btn);
         return;
     }
 
     if (player.isCPU) {
         landAdminText.innerText = "CPUは交換を見送った。";
+        const btn = document.createElement('button');
+        btn.className = 'action-btn';
+        btn.innerText = '閉じる';
+        btn.onclick = () => closeLandAdmin();
+        landAdminInteraction.appendChild(btn);
         return;
     }
 
@@ -2109,6 +2162,11 @@ function handleRegionalDev(player, name, payRate, priceRate) {
         }
     });
     updatePlayerStats();
+    const btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.innerText = '閉じる';
+    btn.onclick = () => closeLandAdmin();
+    landAdminInteraction.appendChild(btn);
 }
 
 function handleNewTown(player) {
@@ -2118,7 +2176,11 @@ function handleNewTown(player) {
 
     if (vacantColors.length === 0) {
         landAdminText.innerText = "空き地域がありません。";
-        setTimeout(() => { landAdminModal.classList.remove('active'); showEndTurn(); }, 1500);
+        const btn = document.createElement('button');
+        btn.className = 'action-btn';
+        btn.innerText = '閉じる';
+        btn.onclick = () => closeLandAdmin();
+        landAdminInteraction.appendChild(btn);
         return;
     }
 
