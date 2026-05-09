@@ -66,47 +66,62 @@ body {
 }
 
 /* Name Input */
-.name-input-container {
-    margin-bottom: 2rem;
-    text-align: left;
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
+.dynamic-name-container {
+    margin: 2rem auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 800px;
 }
 
-.name-input-container label {
+.name-input-group {
+    text-align: left;
+    background: rgba(15, 23, 42, 0.3);
+    padding: 1.2rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.name-input-group label {
     display: block;
     margin-bottom: 0.5rem;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     color: #94a3b8;
+    font-weight: bold;
 }
 
-#player-name-input {
+.name-input-group input {
     width: 100%;
-    padding: 1rem;
-    font-size: 1.2rem;
+    padding: 0.8rem;
+    font-size: 1.1rem;
     background: rgba(15, 23, 42, 0.5);
     border: 2px solid rgba(59, 130, 246, 0.3);
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
     color: white;
     outline: none;
     transition: all 0.3s;
 }
 
-#player-name-input:focus {
+.name-input-group input:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
 }
 
-.input-hint {
+.name-input-group .input-hint {
     margin-top: 0.5rem;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: #64748b;
-    text-align: center;
 }
 
-#player-name-input:invalid {
+.name-input-group input:invalid {
     border-color: #ef4444;
+}
+
+.player-count-btn.selected {
+    background: #22c55e;
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+    transform: scale(1.05);
 }
 
 .menu-btn {

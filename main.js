@@ -73,7 +73,7 @@ const OSAKA_EVENTS = [
     { name: '万博開催決定', text: '万博公園エリアへの注目度アップ！賃貸料が3倍に。', color: '#00008b', multiplier: 3, targetColors: ['#00008b'], duration: 4 },
     { name: 'くいだおれ大売出し', text: '難波・道頓堀エリアが食通で溢れる！賃貸料が3倍に。', color: '#ffc0cb', multiplier: 3, targetColors: ['#ffc0cb'], duration: 3 },
     { name: 'タイガース優勝', text: '大阪全体がお祭り騒ぎ！すべての土地の賃貸料が1.5倍に。', color: '#eab308', multiplier: 1.5, targetColors: 'all', duration: 2 },
-    { name: '特区指定', text: '建築ラッシュ！独占していなくても、止まった土地に増築が可能。', color: '#64748b', type: 'build_rush', duration: 5 }
+    { name: '特区指定', text: '建築ラッシュ！同じ色の土地を2つ以上持っていれば、独占していなくても増築が可能。', color: '#64748b', type: 'build_rush', duration: 5 }
 ];
 
 
@@ -387,24 +387,74 @@ function closeLandAdmin() {
 }
 
 // Start Game Setup
-document.querySelectorAll('.player-select .menu-btn').forEach(btn => {
+let selectedHumanCount = 0;
+
+document.querySelectorAll('.player-count-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
         initAudio();
         playClickSound();
-        const humanCount = parseInt(e.target.dataset.players);
         
-        const nameInput = document.getElementById('player-name-input');
-        let customName = nameInput.value.trim();
+        // UI更新: 選択状態の表示
+        document.querySelectorAll('.player-count-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
         
-        // バリデーション: 半角英数字、ハイフン、アンダーバーのみ
-        const nameRegex = /^[A-Za-z0-9\-_]+$/;
-        if (customName !== '' && !nameRegex.test(customName)) {
-            alert('名前は半角英数字、ハイフン(-)、アンダーバー(_)のみ使用できます。');
+        const humanCount = parseInt(btn.dataset.players);
+        selectedHumanCount = humanCount;
+        generateNameInputs(humanCount);
+        
+        // 開始ボタンを表示
+        document.getElementById('start-game-btn').style.display = 'block';
+    });
+});
+
+function generateNameInputs(count) {
+    const container = document.getElementById('dynamic-name-inputs');
+    container.innerHTML = '';
+    
+    for (let i = 0; i < count; i++) {
+        const group = document.createElement('div');
+        group.className = 'name-input-group';
+        
+        const label = document.createElement('label');
+        label.innerText = `プレイヤー ${i + 1} の名前`;
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = `player-name-${i}`;
+        input.placeholder = `Player ${i + 1}`;
+        input.maxLength = 15;
+        input.pattern = '[A-Za-z0-9\\-_]+';
+        
+        const hint = document.createElement('p');
+        hint.className = 'input-hint';
+        hint.innerText = '半角英数字、-、_ のみ';
+        
+        group.appendChild(label);
+        group.appendChild(input);
+        group.appendChild(hint);
+        container.appendChild(group);
+    }
+}
+
+document.getElementById('start-game-btn').addEventListener('click', () => {
+    initAudio();
+    playClickSound();
+    
+    const customNames = [];
+    const nameRegex = /^[A-Za-z0-9\-_]+$/;
+    
+    for (let i = 0; i < selectedHumanCount; i++) {
+        const input = document.getElementById(`player-name-${i}`);
+        const name = input.value.trim();
+        
+        if (name !== '' && !nameRegex.test(name)) {
+            alert(`プレイヤー ${i + 1} の名前が正しくありません。半角英数字、ハイフン(-)、アンダーバー(_)のみ使用できます。`);
             return;
         }
-        
-        startGame(humanCount, customName);
-    });
+        customNames.push(name);
+    }
+    
+    startGame(selectedHumanCount, customNames);
 });
 
 function resetBoardState() {
@@ -418,14 +468,15 @@ function resetBoardState() {
     });
 }
 
-function startGame(humanCount, customName = '') {
+function startGame(humanCount, customNames = []) {
     resetBoardState();
     players = [];
     for (let i = 0; i < 4; i++) {
         let name;
         if (i < humanCount) {
+            const customName = customNames[i];
             if (customName) {
-                name = humanCount > 1 ? `${customName}_${i + 1}` : customName;
+                name = customName;
             } else {
                 name = `Player ${i + 1}`;
             }
@@ -681,10 +732,15 @@ function getBuildableSpaces(player) {
     const colors = [...new Set(ownedProperties.map(s => s.color))];
 
     colors.forEach(color => {
-        // 通常の独占状態、または特区指定（建築ラッシュ）イベント中であれば建築可能
-        if (hasMonopoly(player.id, color) || (activeEvent && activeEvent.type === 'build_rush')) {
-            // プレイヤーが所有しているその色の土地だけを対象にする
-            const group = BOARD_SPACES.filter(s => s.type === 'property' && s.color === color && s.owner === player.id);
+        // プレイヤーが所有しているその色の土地だけを対象にする
+        const group = BOARD_SPACES.filter(s => s.type === 'property' && s.color === color && s.owner === player.id);
+        
+        // 通常の独占状態
+        const isMonopoly = hasMonopoly(player.id, color);
+        // 特区指定（建築ラッシュ）イベント中かつ2枚以上所有
+        const isBuildRushEligible = (activeEvent && activeEvent.type === 'build_rush' && group.length >= 2);
+
+        if (isMonopoly || isBuildRushEligible) {
             const minHouses = Math.min(...group.map(s => s.houses));
             group.forEach(s => {
                 if (s.houses === minHouses && s.houses < 5) {
@@ -850,10 +906,8 @@ function showPlayerDetail(player) {
 }
 
 function triggerOsakaEvent() {
-    // 既存の市場変動イベントがあればリセット
-    if (activeEvent && activeEvent.type === 'market') {
-        resetMarketPrices();
-    }
+    // すでにイベントが進行中なら新しいイベントは発生させない
+    if (activeEvent) return;
 
     const event = OSAKA_EVENTS[Math.floor(Math.random() * OSAKA_EVENTS.length)];
     activeEvent = { ...event };
@@ -1180,7 +1234,8 @@ function resolveSpace(player, space) {
             }
         } else if (space.owner === player.id) {
             // 特区指定（建築ラッシュ）イベント中の建築処理
-            if (activeEvent && activeEvent.type === 'build_rush' && space.type === 'property' && space.houses < 5) {
+            const ownedOfColor = BOARD_SPACES.filter(s => s.type === 'property' && s.color === space.color && s.owner === player.id).length;
+            if (activeEvent && activeEvent.type === 'build_rush' && space.type === 'property' && space.houses < 5 && ownedOfColor >= 2) {
                 handleBuildRush(player, space);
                 return;
             }
@@ -1645,10 +1700,8 @@ function updateChartData() {
 
 // 地価変動イベント
 function triggerMarketCrash() {
-    // 既存の市場変動イベントがあれば先にリセット
-    if (activeEvent && activeEvent.type === 'market') {
-        resetMarketPrices();
-    }
+    // すでにイベントが進行中なら新しいイベントは発生させない
+    if (activeEvent) return;
 
     const colorGroups = [
         { color: "#8b4513", name: "茶色" },
@@ -2271,7 +2324,10 @@ function getColorName(color) {
         '#ff0000': '赤色',
         '#ffff00': '黄色',
         '#008000': '緑色',
-        '#00008b': '紺色'
+        '#00008b': '紺色',
+        '#ccc': '灰色',
+        '#fff': '白色',
+        '#000': '黒色'
     };
     return names[color] || color;
 }

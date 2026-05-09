@@ -16,18 +16,17 @@
                 <button id="continue-btn" class="menu-btn" style="width: 100%; background: #22c55e;">前回の続きから</button>
                 <p style="margin-top: 1rem; color: #ccc;">または新しくゲームを始める</p>
             </div>
-            <div class="name-input-container">
-                <label for="player-name-input">プレイヤー名</label>
-                <input type="text" id="player-name-input" placeholder="Player 1" maxlength="15" pattern="[A-Za-z0-9\-_]+">
-                <p class="input-hint">半角英数字、ハイフン、アンダーバーのみ（空欄ならデフォルト）</p>
-            </div>
-            <p>プレイヤー人数を選択してください（残りはCPUになります）</p>
+            <p>プレイヤー人数を選択してください</p>
             <div class="player-select">
-                <button class="menu-btn" data-players="1">1人</button>
-                <button class="menu-btn" data-players="2">2人</button>
-                <button class="menu-btn" data-players="3">3人</button>
-                <button class="menu-btn" data-players="4">4人</button>
+                <button class="menu-btn player-count-btn" data-players="1">1人</button>
+                <button class="menu-btn player-count-btn" data-players="2">2人</button>
+                <button class="menu-btn player-count-btn" data-players="3">3人</button>
+                <button class="menu-btn player-count-btn" data-players="4">4人</button>
             </div>
+            <div id="dynamic-name-inputs" class="dynamic-name-container">
+                <!-- Name inputs will be generated here -->
+            </div>
+            <button id="start-game-btn" class="menu-btn" style="display: none; margin-top: 2rem; background: #3b82f6; width: 100%;">ゲーム開始</button>
         </div>
     </div>
 
