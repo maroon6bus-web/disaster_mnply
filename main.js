@@ -11,7 +11,7 @@ const BOARD_SPACES = [
     { id: 9, name: '十三', type: 'property', price: 120, rent: 8, color: '#87ceeb', desc: '「ねぎ焼き」発祥の地。阪急電車が交差する、独特の文化を持つ下町。' },
     { id: 10, name: '刑務所', type: 'jail', color: '#fff' },
     { id: 11, name: '難波', type: 'property', price: 140, rent: 10, color: '#ffc0cb', desc: '大阪の顔。お笑いの殿堂・なんばグランド花月があり、常に活気にあふれる。' },
-    { id: 12, name: '関西電力', type: 'utility', price: 150, rent: 10, color: '#ccc' },
+    { id: 12, name: '関西電力', type: 'utility', price: 150, rent: 10, color: '#ccc', desc: '大阪市北区に本店を置く電力会社。関西地方の電力を支える重要なインフラです。' },
     { id: 13, name: '心斎橋', type: 'property', price: 140, rent: 10, color: '#ffc0cb', desc: '有名な「心斎橋筋商店街」があり、最新のファッションが集まるエリア。' },
     { id: 14, name: '道頓堀', type: 'property', price: 160, rent: 12, color: '#ffc0cb', desc: '巨大看板とグリコ。くいだおれの街を象徴する、世界的な観光スポット。' },
     { id: 15, name: '新大阪', type: 'property', price: 200, rent: 25, color: '#ccc', desc: '新幹線の発着点。大阪の玄関口として、全国から多くの人が集まる。' },
@@ -27,7 +27,7 @@ const BOARD_SPACES = [
     { id: 25, name: '南海難波', type: 'property', price: 200, rent: 25, color: '#ccc', desc: 'ミナミの玄関口。関西空港へのアクセスも良く、賑わいが絶えない。' },
     { id: 26, name: '北新地', type: 'property', price: 260, rent: 22, color: '#ffff00', desc: '西日本随一の高級飲食店街。夜になると華やかな社交場へと変わる。' },
     { id: 27, name: '堂島', type: 'property', price: 260, rent: 22, color: '#ffff00', desc: 'ビジネス街でありながら、堂島ロールなどのスイーツも有名な気品ある街。' },
-    { id: 28, name: '水道局', type: 'utility', price: 150, rent: 10, color: '#ccc' },
+    { id: 28, name: '水道局', type: 'utility', price: 150, rent: 10, color: '#ccc', desc: '大阪市の水道事業。安全で美味しい水を市民に届けています。' },
     { id: 29, name: '淀屋橋', type: 'property', price: 280, rent: 24, color: '#ffff00', desc: '大阪の金融と政治の中心地。歴史的な石造りの建物が並ぶ。' },
     { id: 30, name: '刑務所へ', type: 'gotojail', color: '#fff' },
     { id: 31, name: '御堂筋', type: 'property', price: 300, rent: 26, color: '#008000', desc: '大阪のメインストリート。冬のイルミネーションやイチョウ並木が美しい。' },
@@ -265,13 +265,6 @@ const eventText = document.getElementById('event-text');
 // Property Info Elements
 const propertyInfoModal = document.getElementById('property-info-modal');
 const infoName = document.getElementById('info-name');
-const infoPriceLand = document.getElementById('info-price-land');
-const infoPriceBuild = document.getElementById('info-price-build');
-const infoPrice1 = document.getElementById('info-price-1');
-const infoPrice2 = document.getElementById('info-price-2');
-const infoPrice3 = document.getElementById('info-price-3');
-const infoPrice4 = document.getElementById('info-price-4');
-const infoPriceHotel = document.getElementById('info-price-hotel');
 const infoDesc = document.getElementById('info-desc');
 const infoCardHeader = document.getElementById('info-card-header');
 const closeInfoBtn = document.getElementById('close-info-btn');
@@ -393,15 +386,15 @@ document.querySelectorAll('.player-count-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
         initAudio();
         playClickSound();
-        
+
         // UI更新: 選択状態の表示
         document.querySelectorAll('.player-count-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
-        
+
         const humanCount = parseInt(btn.dataset.players);
         selectedHumanCount = humanCount;
         generateNameInputs(humanCount);
-        
+
         // 開始ボタンを表示
         document.getElementById('start-game-btn').style.display = 'block';
     });
@@ -410,25 +403,25 @@ document.querySelectorAll('.player-count-btn').forEach(btn => {
 function generateNameInputs(count) {
     const container = document.getElementById('dynamic-name-inputs');
     container.innerHTML = '';
-    
+
     for (let i = 0; i < count; i++) {
         const group = document.createElement('div');
         group.className = 'name-input-group';
-        
+
         const label = document.createElement('label');
         label.innerText = `プレイヤー ${i + 1} の名前`;
-        
+
         const input = document.createElement('input');
         input.type = 'text';
         input.id = `player-name-${i}`;
         input.placeholder = `Player ${i + 1}`;
         input.maxLength = 15;
         input.pattern = '[A-Za-z0-9\\-_]+';
-        
+
         const hint = document.createElement('p');
         hint.className = 'input-hint';
         hint.innerText = '半角英数字、-、_ のみ';
-        
+
         group.appendChild(label);
         group.appendChild(input);
         group.appendChild(hint);
@@ -439,21 +432,21 @@ function generateNameInputs(count) {
 document.getElementById('start-game-btn').addEventListener('click', () => {
     initAudio();
     playClickSound();
-    
+
     const customNames = [];
     const nameRegex = /^[A-Za-z0-9\-_]+$/;
-    
+
     for (let i = 0; i < selectedHumanCount; i++) {
         const input = document.getElementById(`player-name-${i}`);
         const name = input.value.trim();
-        
+
         if (name !== '' && !nameRegex.test(name)) {
             alert(`プレイヤー ${i + 1} の名前が正しくありません。半角英数字、ハイフン(-)、アンダーバー(_)のみ使用できます。`);
             return;
         }
         customNames.push(name);
     }
-    
+
     startGame(selectedHumanCount, customNames);
 });
 
@@ -620,16 +613,17 @@ function initBoard() {
         }
 
         // 追加：マスクリック時の情報表示（通常の時のみ）
-        if (space.type === 'property' || space.type === 'railroad') {
+        if (space.type === 'property' || space.type === 'railroad' || space.type === 'utility' || 
+            space.type === 'chest' || space.type === 'chance' || space.type === 'disaster') {
             spaceEl.style.cursor = 'pointer';
             spaceEl.addEventListener('click', (e) => {
                 // 他のモーダルが表示されていないときだけ開く
-                if (!propertyModal.classList.contains('active') && 
-                    !buildModal.classList.contains('active') && 
-                    !chanceModal.classList.contains('active') && 
-                    !disasterModal.classList.contains('active') && 
+                if (!propertyModal.classList.contains('active') &&
+                    !buildModal.classList.contains('active') &&
+                    !chanceModal.classList.contains('active') &&
+                    !disasterModal.classList.contains('active') &&
                     !landAdminModal.classList.contains('active')) {
-                    
+
                     playClickSound();
                     showPropertyInfo(space);
                 }
@@ -693,14 +687,14 @@ function updatePlayerStats() {
             </div>
             <div class="player-money">$${player.money}</div>
         `;
-        
+
         // Add click listener for detail
         card.style.cursor = 'pointer';
         card.addEventListener('click', () => {
             playClickSound();
             showPlayerDetail(player);
         });
-        
+
         playerStatsElement.appendChild(card);
 
         // 手番のプレイヤーのカードまで自動的にスクロールする
@@ -734,7 +728,7 @@ function getBuildableSpaces(player) {
     colors.forEach(color => {
         // プレイヤーが所有しているその色の土地だけを対象にする
         const group = BOARD_SPACES.filter(s => s.type === 'property' && s.color === color && s.owner === player.id);
-        
+
         // 通常の独占状態
         const isMonopoly = hasMonopoly(player.id, color);
         // 特区指定（建築ラッシュ）イベント中かつ2枚以上所有
@@ -781,10 +775,10 @@ function updateInsuranceButtonVisibility() {
 
 function getHousesHTML(space) {
     if (space.type !== 'property' || !space.houses || space.houses === 0) return '';
-    
+
     const owner = players[space.owner];
     const color = owner ? owner.color : '#22c55e'; // Default to green if no owner (shouldn't happen)
-    
+
     if (space.houses === 5) {
         return `<div class="hotel-icon" style="background-color: ${color}"></div>`;
     } else {
@@ -841,32 +835,111 @@ function getUpgradePrice(space) {
 }
 
 function showPropertyInfo(space) {
-    if (space.type !== 'property' && space.type !== 'railroad') return;
+    const specialTypes = ['property', 'railroad', 'utility', 'chest', 'chance', 'disaster'];
+    if (!specialTypes.includes(space.type)) return;
+
     infoName.innerText = space.name;
-    infoCardHeader.style.backgroundColor = space.color;
-    
-    infoPriceLand.innerText = `$${space.basePrice}`;
-    
-    const hPrice = getHousePrice(space);
-    const hotelPrice = 150 + (2 * hPrice);
-    infoPriceBuild.innerHTML = `家: $${hPrice}<br>ホテル: $${hotelPrice}`;
-    
-    // 家賃の計算（基本価格に基づく）
-    const increase = space.basePrice * 0.5;
-    const r1 = space.baseRent + (1 * increase);
-    const r2 = space.baseRent + (2 * increase);
-    const r3 = space.baseRent + (3 * increase);
-    const r4 = space.baseRent + (4 * increase);
-    const rHotel = space.baseRent + (5 * increase) + space.basePrice;
-    
-    infoPrice1.innerText = `$${Math.round(r1)}`;
-    infoPrice2.innerText = `$${Math.round(r2)}`;
-    infoPrice3.innerText = `$${Math.round(r3)}`;
-    infoPrice4.innerText = `$${Math.round(r4)}`;
-    infoPriceHotel.innerText = `$${Math.round(rHotel)}`;
-    
-    infoDesc.innerText = space.desc || '歴史ある大阪の街並みを楽しめるエリアです。';
-    
+    infoCardHeader.style.backgroundColor = space.color || '#333';
+
+    const infoPrices = document.getElementById('info-prices');
+
+    if (space.type === 'utility') {
+        // 公共事業（関西電力・水道局）の表示
+        infoPrices.innerHTML = `
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;">
+                <span>土地代</span><span>$${space.basePrice}</span>
+            </div>
+            <div style="margin-top: 10px; font-weight: bold; color: #eab308;">家賃の計算式(関西電力と水道局):</div>
+            <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                <span>1か所所有時</span><span>ダイスの目 × 4</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                <span>2か所所有時</span><span>ダイスの目 × 10</span>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.85rem; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px;">
+                ※所有者が止まった場合は無料です。
+            </div>
+        `;
+    } else if (space.type === 'chest') {
+        // 土地行政
+        infoPrices.innerHTML = `
+            <div style="font-weight: bold; color: #eab308; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;">出現するカード例:</div>
+            <ul style="padding-left: 1.2rem; margin: 0; font-size: 0.85rem; line-height: 1.5; color: #cbd5e1;">
+                <li><b style="color: #fff;">土地の払い下げ</b>: 未所有地を格安で購入</li>
+                <li><b style="color: #fff;">区画整理</b>: 特定色の土地をすべて更地に戻す</li>
+                <li><b style="color: #fff;">競争入札</b>: 全プレイヤーで土地を競売</li>
+                <li><b style="color: #fff;">土地交換</b>: 他プレイヤーと土地を交換</li>
+                <li><b style="color: #fff;">開発（高速道路等）</b>: 特定色の地価・賃料UP</li>
+                <li><b style="color: #fff;">ニュータウン</b>: 空き色グループを半額購入</li>
+            </ul>
+        `;
+    } else if (space.type === 'chance') {
+        // チャンス
+        infoPrices.innerHTML = `
+            <div style="font-weight: bold; color: #3b82f6; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;">出現するカード例:</div>
+            <div style="max-height: 180px; overflow-y: auto; padding-right: 5px;">
+                <ul style="padding-left: 1.2rem; margin: 0; font-size: 0.85rem; line-height: 1.5; color: #cbd5e1;">
+                    <li><b style="color: #fff;">移動</b>: GOへ、刑務所へ、特定の駅へ、3マス戻る</li>
+                    <li><b style="color: #fff;">収入</b>: 銀行配当($50)、宝くじ($20)、TV出演($100)</li>
+                    <li><b style="color: #fff;">支出</b>: スピード違反($15)、新幹線($100)、観光($20)</li>
+                </ul>
+            </div>
+        `;
+    } else if (space.type === 'disaster') {
+        // 災害
+        infoPrices.innerHTML = `
+            <div style="font-weight: bold; color: #ef4444; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;">発生する災害:</div>
+            <ul style="padding-left: 1.2rem; margin: 0; font-size: 0.85rem; line-height: 1.5; color: #cbd5e1;">
+                <li><b style="color: #fff;">ライフライン停止</b>: 賃料無料＋お見舞金</li>
+                <li><b style="color: #fff;">火事</b>: その土地のすべての建物が消失</li>
+                <li><b style="color: #fff;">洪水</b>: 同一色の全建物消失＋30%で土地没収</li>
+                <li><b style="color: #fff;">地震</b>: 同一色の全建物消失＋土地没収</li>
+            </ul>
+            <div style="margin-top: 8px; font-size: 0.8rem; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px;">
+                ※災害保険で建物・土地の消失を防げます。
+            </div>
+        `;
+    } else {
+        // 通常の土地の表示
+        const hPrice = getHousePrice(space);
+        const hotelPrice = 150 + (2 * hPrice);
+
+        const increase = space.basePrice * 0.5;
+        const r1 = space.baseRent + (1 * increase);
+        const r2 = space.baseRent + (2 * increase);
+        const r3 = space.baseRent + (3 * increase);
+        const r4 = space.baseRent + (4 * increase);
+        const rHotel = space.baseRent + (5 * increase) + space.basePrice;
+
+        infoPrices.innerHTML = `
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;">
+                <span>土地代</span><span>$${space.basePrice}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; color: #eab308;">
+                <span>建築費</span><span>家: $${hPrice}<br>ホテル: $${hotelPrice}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>家1軒の家賃</span><span>$${Math.round(r1)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>家2軒の家賃</span><span>$${Math.round(r2)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>家3軒の家賃</span><span>$${Math.round(r3)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>家4軒の家賃</span><span>$${Math.round(r4)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: #ef4444; font-weight: bold; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px;">
+                <span>ホテル家賃</span><span>$${Math.round(rHotel)}</span>
+            </div>
+        `;
+    }
+
+    infoDesc.innerText = space.desc || (space.type === 'chest' ? '土地に関する行政手続きが発生します。' : 
+                                      space.type === 'chance' ? '様々なイベントが発生します。' : 
+                                      space.type === 'disaster' ? '所有地に甚大な被害が出る可能性があります。' : 
+                                      '歴史ある大阪の街並みを楽しめるエリアです。');
     propertyInfoModal.classList.add('active');
 }
 
@@ -874,14 +947,14 @@ function showPlayerDetail(player) {
     playerInfoName.innerText = player.name;
     playerInfoHeader.style.backgroundColor = player.color;
     playerInfoMoney.innerText = `$${player.money}`;
-    
+
     let landSum = 0;
     let houseSum = 0;
-    
+
     player.properties.forEach(id => {
         const space = BOARD_SPACES[id];
         landSum += space.basePrice;
-        
+
         if (space.houses > 0) {
             const hPrice = getHousePrice(space);
             if (space.houses <= 4) {
@@ -893,15 +966,15 @@ function showPlayerDetail(player) {
             }
         }
     });
-    
+
     playerInfoLandSum.innerText = `$${landSum}`;
     playerInfoHouseSum.innerText = `$${houseSum}`;
     playerInfoAssets.innerText = `$${landSum + houseSum}`;
     playerInfoTotal.innerText = `$${player.money + landSum + houseSum}`;
-    
+
     playerInfoInsurance.innerText = player.hasInsurance ? `加入中 (あと${player.insuranceGOPasses}回通過まで) ✅` : '未加入 ❌';
     playerInfoInsurance.style.color = player.hasInsurance ? '#4ade80' : '#ef4444';
-    
+
     playerInfoModal.classList.add('active');
 }
 
@@ -912,7 +985,7 @@ function triggerOsakaEvent() {
     const event = OSAKA_EVENTS[Math.floor(Math.random() * OSAKA_EVENTS.length)];
     activeEvent = { ...event };
     refreshEventUI();
-    
+
     log(`!! イベント発生 !! 「${activeEvent.name}」が始まりました！`);
     playTone(600, 'sine', 0.3, 0.1);
     setTimeout(() => playTone(800, 'sine', 0.3, 0.1), 150);
@@ -934,16 +1007,16 @@ function refreshEventUI() {
 
 function updateActiveEvent() {
     if (!activeEvent) return;
-    
+
     activeEvent.duration--;
     if (activeEvent.duration <= 0) {
         log(`「${activeEvent.name}」が終了しました。`);
-        
+
         // 市場変動イベント終了時の価格リセット
         if (activeEvent.type === 'market') {
             resetMarketPrices();
         }
-        
+
         activeEvent = null;
     }
     refreshEventUI();
@@ -1302,14 +1375,14 @@ async function handleBuildRush(player, space) {
     const confirmBuild = await new Promise(resolve => {
         landAdminInteraction.innerHTML = '';
         landAdminText.innerText = `【特区指定】建築ラッシュです！\n${space.name} に ${nextLevel} を建築しますか？\n(費用: $${cost})`;
-        
+
         const yesBtn = document.createElement('button');
         yesBtn.className = 'yes-btn'; yesBtn.innerText = `建築する ($${cost})`;
         yesBtn.disabled = !canAfford;
-        
+
         const noBtn = document.createElement('button');
         noBtn.className = 'no-btn'; noBtn.innerText = '今回は見送る';
-        
+
         // 15秒後に自動で見送り
         const timeout = setTimeout(() => {
             log(`${player.name} は建築を見送りました（タイムアウト）。`);
@@ -1324,7 +1397,7 @@ async function handleBuildRush(player, space) {
             clearTimeout(timeout);
             resolve(false);
         };
-        
+
         landAdminInteraction.appendChild(yesBtn);
         landAdminInteraction.appendChild(noBtn);
         landAdminModal.classList.add('active');
@@ -1478,7 +1551,7 @@ function applyDestructionDisaster(player, space, mode, lossChance = 0) {
 function updateSpaceUI(space) {
     updatePropertyChart();
     saveGame();
-    
+
     // 建物（家・ホテル）の更新
     const container = document.getElementById(`houses-${space.id}`);
     if (container) {
